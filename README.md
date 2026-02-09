@@ -1,1 +1,1 @@
-# Slack App
+# SlackApp
