@@ -187,3 +187,4 @@ export const addChannelToWorkspaceController = async (req, res) => {
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json(internalErrorResponse(error));
   }
+};
