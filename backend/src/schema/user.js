@@ -1,5 +1,7 @@
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
+
 const userSchema = new mongoose.Schema(
   {
     email: {
@@ -28,28 +30,30 @@ const userSchema = new mongoose.Schema(
     },
     avatar: {
       type: String
+    },
+    isVerified: {
+      type: Boolean,
+      default: false
+    },
+    verificationToken: {
+      type: String
+    },
+    verificationTokenExpiry: {
+      type: Date
     }
   },
   { timestamps: true }
 );
 
-userSchema.pre('save', async function saveUser() {
-  // NOTE: In recent mongoose versions, `save()` passes an options object into
-  // pre('save') middleware. Using callback-style middleware here can lead to
-  // "next is not a function" if the first argument is actually `options`.
-  //
-  // Promise-based middleware avoids that whole class of issues.
-  const user = this;
-
-  // Only hash when password is newly set/changed (avoid double-hashing on updates)
-  if (user.isModified('password')) {
-    const salt = await bcrypt.genSalt(9);
-    user.password = await bcrypt.hash(user.password, salt);
-  }
-
-  // Set avatar on create or when username changes
-  if (user.isNew || user.isModified('username') || !user.avatar) {
+userSchema.pre('save', function saveUser(next) {
+  if (this.isNew) {
+    const user = this;
+    const SALT = bcrypt.genSaltSync(9);
+    const hashedPassword = bcrypt.hashSync(user.password, SALT);
+    user.password = hashedPassword;
     user.avatar = `https://robohash.org/${user.username}`;
+    user.verificationToken = uuidv4().substring(0, 10).toUpperCase();
+    user.verificationTokenExpiry = Date.now() + 3600000; // 1 hour
   }
 });
 
