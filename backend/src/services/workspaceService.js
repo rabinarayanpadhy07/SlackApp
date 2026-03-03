@@ -98,7 +98,6 @@ export const deleteWorkspaceService = async (workspaceId, userId) => {
         statusCode: StatusCodes.NOT_FOUND
       });
     }
-    console.log(workspace.members, userId);
     const isAllowed = isUserAdminOfWorkspace(workspace, userId);
     //   const channelIds = workspace.channels.map((channel) => channel._id);
 
@@ -130,7 +129,6 @@ export const getWorkspaceService = async (workspaceId, userId) => {
         statusCode: StatusCodes.NOT_FOUND
       });
     }
-    console.log(workspace);
     const isMember = isUserMemberOfWorkspace(workspace, userId);
     if (!isMember) {
       throw new ClientError({
