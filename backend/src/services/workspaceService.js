@@ -17,12 +17,10 @@ const isUserAdminOfWorkspace = (workspace, userId) => {
         member.memberId._id.toString() === userId) &&
       member.role === 'admin'
   );
-  console.log(response);
   return response;
 };
 
 export const isUserMemberOfWorkspace = (workspace, userId) => {
-  console.log(userId);
   return workspace.members.find((member) => {
     console.log('member id ', member.memberId.toString());
     return member.memberId._id.toString() === userId;
