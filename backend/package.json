@@ -16,6 +16,7 @@
   "dependencies": {
     "@bull-board/api": "^6.20.2",
     "@bull-board/express": "^6.20.2",
+    "aws-sdk": "^2.1693.0",
     "bcrypt": "^6.0.0",
     "bull": "^4.16.5",
     "bullmq": "^5.70.1",
