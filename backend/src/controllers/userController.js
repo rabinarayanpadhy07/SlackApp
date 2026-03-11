@@ -1,6 +1,10 @@
 import { StatusCodes } from 'http-status-codes';
 
-import { signInService, signUpService } from '../services/userService.js';
+import {
+  signInService,
+  signInWithGoogleService,
+  signUpService
+} from '../services/userService.js';
 import {
   customErrorResponse,
   internalErrorResponse,
@@ -32,6 +36,24 @@ export const signIn = async (req, res) => {
     return res
       .status(StatusCodes.OK)
       .json(successResponse(response, 'User signed in successfully'));
+  } catch (error) {
+    console.log('User controller error', error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json(customErrorResponse(error));
+    }
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(internalErrorResponse(error));
+  }
+};
+
+export const googleAuth = async (req, res) => {
+  try {
+    const response = await signInWithGoogleService(req.body);
+    return res
+      .status(StatusCodes.OK)
+      .json(successResponse(response, 'User authenticated with Google successfully'));
   } catch (error) {
     console.log('User controller error', error);
     if (error.statusCode) {

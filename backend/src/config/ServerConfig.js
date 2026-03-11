@@ -14,6 +14,8 @@ export const JWT_SECRET = process.env.JWT_SECRET;
 
 export const JWT_EXPIRY = process.env.JWT_EXPIRY || '1d';
 
+export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+
 export const MAIL_ID = process.env.MAIL_ID;
 
 export const MAIL_PASSWORD = process.env.MAIL_PASSWORD;
