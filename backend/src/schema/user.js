@@ -15,8 +15,7 @@ const userSchema = new mongoose.Schema(
       ]
     },
     password: {
-      type: String,
-      required: [true, 'Password is required']
+      type: String
     },
     username: {
       type: String,
@@ -30,6 +29,16 @@ const userSchema = new mongoose.Schema(
     },
     avatar: {
       type: String
+    },
+    authProvider: {
+      type: String,
+      enum: ['local', 'google'],
+      default: 'local'
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true
     },
     isVerified: {
       type: Boolean,
@@ -46,17 +55,22 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.pre('save', async function saveUser() {
-  if (!this.isNew) {
-    return;
+  const user = this;
+
+  if (user.isModified('password') && user.password) {
+    const SALT = bcrypt.genSaltSync(9);
+    const hashedPassword = bcrypt.hashSync(user.password, SALT);
+    user.password = hashedPassword;
   }
 
-  const user = this;
-  const SALT = bcrypt.genSaltSync(9);
-  const hashedPassword = bcrypt.hashSync(user.password, SALT);
-  user.password = hashedPassword;
-  user.avatar = `https://robohash.org/${user.username}`;
-  user.verificationToken = uuidv4().substring(0, 10).toUpperCase();
-  user.verificationTokenExpiry = Date.now() + 3600000; // 1 hour
+  if (user.isNew && !user.avatar) {
+    user.avatar = `https://robohash.org/${user.username}`;
+  }
+
+  if (user.isNew && user.authProvider === 'local') {
+    user.verificationToken = uuidv4().substring(0, 10).toUpperCase();
+    user.verificationTokenExpiry = Date.now() + 3600000; // 1 hour
+  }
 });
 
 const User = mongoose.model('User', userSchema);

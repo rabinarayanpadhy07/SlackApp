@@ -15,6 +15,11 @@ const userRepository = {
     return user;
   },
 
+  getByGoogleId: async function (googleId) {
+    const user = await User.findOne({ googleId });
+    return user;
+  },
+
   getByUsername: async function (username) {
     const user = await User.findOne({ username }).select('-password'); // exclude password
     return user;
