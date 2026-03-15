@@ -1,6 +1,7 @@
+import crypto from 'crypto';
+
 import { RAZORPAY_KEY_SECRET } from "../config/serverConfig.js";
 import paymentRepository from "../repositories/paymentRepository.js"
-import crypto from 'crypto';
 
 export const createPaymentService = async (orderId, amount) => {
     const payment = await paymentRepository.create({
