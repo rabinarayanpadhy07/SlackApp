@@ -8,6 +8,7 @@ import bullServerAdapter from './config/bullBoardConfig.js';
 import connectDB from './config/dbConfig.js';
 import { PORT } from './config/serverConfig.js';
 import ChannelSocketHandlers from './controllers/channelSocketController.js';
+import DirectMessageSocketHandlers from './controllers/directMessageSocketController.js';
 import MessageSocketHandlers from './controllers/messageSocketController.js';
 import { verifyEmailController } from './controllers/workspaceController.js';
 import apiRouter from './routes/apiRoutes.js';
@@ -45,6 +46,7 @@ io.on('connection', (socket) => {
   // });
   MessageSocketHandlers(io, socket);
   ChannelSocketHandlers(io, socket);
+  DirectMessageSocketHandlers(io, socket);
 });
 
 server.listen(PORT, async () => {

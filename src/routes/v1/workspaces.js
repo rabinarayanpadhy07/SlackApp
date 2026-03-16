@@ -1,6 +1,10 @@
 import express from 'express';
 
 import {
+  createDirectMessageController,
+  getDirectMessagesController
+} from '../../controllers/directMessageController.js';
+import {
   addChannelToWorkspaceController,
   addMemberToWorkspaceController,
   createWorkspaceController,
@@ -57,6 +61,18 @@ router.put(
   isAuthenticated,
   validate(addChannelToWorkspaceSchema),
   addChannelToWorkspaceController
+);
+
+router.get(
+  '/:workspaceId/members/:memberId/messages',
+  isAuthenticated,
+  getDirectMessagesController
+);
+
+router.post(
+  '/:workspaceId/members/:memberId/messages',
+  isAuthenticated,
+  createDirectMessageController
 );
 
 router.put(
