@@ -5,6 +5,7 @@ import {
   internalErrorResponse,
   successResponse
 } from '../utils/common/responseObjects.js';
+import { getThreadMessagesService } from '../services/messageService.js';
 
 export const listThreadsController = async (req, res) => {
   try {
@@ -28,12 +29,12 @@ export const listThreadsController = async (req, res) => {
 
 export const listThreadMessagesController = async (req, res) => {
   try {
-    return res.status(StatusCodes.NOT_IMPLEMENTED).json(
-      successResponse(
-        [],
-        'Thread messages endpoint is not implemented yet. This is a placeholder to reserve the route shape.'
-      )
-    );
+    const { threadId } = req.params;
+    const messages = await getThreadMessagesService(threadId);
+
+    return res
+        .status(StatusCodes.OK)
+        .json(successResponse(messages, 'Thread messages fetched successfully'));
   } catch (error) {
     console.log('List thread messages controller error', error);
     if (error.statusCode) {

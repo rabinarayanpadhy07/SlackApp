@@ -23,7 +23,24 @@ const messageSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Workspace',
       required: [true, 'Workspace ID is required']
-    }
+    },
+    parentMessage: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Message'
+    },
+    reactions: [
+      {
+        memberId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+          required: true
+        },
+        body: {
+          type: String, // The emoji (e.g., '👍')
+          required: true
+        }
+      }
+    ]
   },
   { timestamps: true }
 );

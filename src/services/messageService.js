@@ -39,3 +39,14 @@ export const createMessageService = async (message) => {
 
   return messageDetails;
 };
+
+export const addReactionService = async (messageId, emoji, memberId) => {
+  const updatedMessage = await messageRepository.addReaction(messageId, emoji, memberId);
+  return updatedMessage;
+};
+
+export const getThreadMessagesService = async (messageId) => {
+  // Add any specific authorization later if required.
+  const messages = await messageRepository.getThreadMessages(messageId);
+  return messages;
+};

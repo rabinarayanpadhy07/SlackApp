@@ -1,4 +1,4 @@
-import { createMessageService } from '../services/messageService.js';
+import { createMessageService, addReactionService } from '../services/messageService.js';
 import {
   NEW_MESSAGE_EVENT,
   NEW_MESSAGE_RECEIVED_EVENT
@@ -9,13 +9,35 @@ export default function messageHandlers(io, socket) {
     console.log(data, typeof data);
     const { channelId } = data;
     const messageResponse = await createMessageService(data);
-    // socket.broadcast.emit(NEW_MESSAGE_RECEIVED_EVENT, messageResponse);
     console.log('Channel', channelId);
-    io.to(channelId).emit(NEW_MESSAGE_RECEIVED_EVENT, messageResponse); // Implementation of rooms
+    io.to(channelId).emit(NEW_MESSAGE_RECEIVED_EVENT, messageResponse); 
     cb({
       success: true,
       message: 'Successfully created the message',
       data: messageResponse
     });
+  });
+
+  socket.on('ADD_REACTION', async function addReactionHandler(data, cb) {
+    try {
+      const { messageId, emoji, memberId, channelId } = data;
+      const updatedMessage = await addReactionService(messageId, emoji, memberId);
+      
+      // Broadcast the updated message to the channel
+      io.to(channelId).emit('REACTION_ADDED', updatedMessage);
+      
+      cb({
+        success: true,
+        message: 'Successfully added reaction',
+        data: updatedMessage
+      });
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+      cb({
+        success: false,
+        message: 'Failed to add reaction',
+        error: error.message
+      });
+    }
   });
 }
