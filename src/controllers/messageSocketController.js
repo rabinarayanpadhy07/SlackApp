@@ -1,7 +1,8 @@
 import { addReactionService,createMessageService } from '../services/messageService.js';
 import {
   NEW_MESSAGE_EVENT,
-  NEW_MESSAGE_RECEIVED_EVENT
+  NEW_MESSAGE_RECEIVED_EVENT,
+  NEW_MENTION_RECEIVED_EVENT
 } from '../utils/common/eventConstants.js';
 
 export default function messageHandlers(io, socket) {
@@ -11,6 +12,19 @@ export default function messageHandlers(io, socket) {
     const messageResponse = await createMessageService(data);
     console.log('Channel', channelId);
     io.to(channelId).emit(NEW_MESSAGE_RECEIVED_EVENT, messageResponse); 
+    
+    // Emit mention notification to mentioned users
+    if (messageResponse.mentions && messageResponse.mentions.length > 0) {
+      messageResponse.mentions.forEach(mention => {
+        // Depending on if the mention is populated, get the ID
+        const mentionId = mention._id ? mention._id.toString() : mention.toString();
+        io.to(mentionId).emit(NEW_MENTION_RECEIVED_EVENT, {
+          message: messageResponse,
+          channelId
+        });
+      });
+    }
+
     cb({
       success: true,
       message: 'Successfully created the message',

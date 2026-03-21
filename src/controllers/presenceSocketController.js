@@ -6,6 +6,7 @@ export default function PresenceSocketHandlers(io, socket) {
     if (!userId) return;
     
     onlineUsers.set(socket.id, userId);
+    socket.join(userId.toString());
     
     // Broadcast to everyone that this user is online
     io.emit('user_status_changed', { userId, isOnline: true });

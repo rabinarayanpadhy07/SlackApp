@@ -8,22 +8,23 @@ const messageRepository = {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate('senderId', 'username email avatar');
+      .populate('senderId', 'username email avatar')
+      .populate('mentions', 'username email avatar');
 
     return messages;
   },
   getThreadMessages: async (messageId) => {
     const messages = await Message.find({ parentMessage: messageId })
       .sort({ createdAt: 1 }) // Chronological order for replies
-      .populate('senderId', 'username email avatar');
+      .populate('senderId', 'username email avatar')
+      .populate('mentions', 'username email avatar');
       
     return messages;
   },
   getMessageDetails: async (messageId) => {
-    const message = await Message.findById(messageId).populate(
-      'senderId',
-      'username email avatar'
-    );
+    const message = await Message.findById(messageId)
+      .populate('senderId', 'username email avatar')
+      .populate('mentions', 'username email avatar');
     return message;
   },
   addReaction: async (messageId, emoji, memberId) => {
@@ -45,7 +46,7 @@ const messageRepository = {
     }
 
     await message.save();
-    return message.populate('senderId', 'username email avatar');
+    return message.populate('senderId', 'username email avatar').then(m => m.populate('mentions', 'username email avatar'));
   }
 };
 

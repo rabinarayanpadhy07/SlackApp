@@ -28,6 +28,12 @@ const messageSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Message'
     },
+    mentions: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      }
+    ],
     reactions: [
       {
         memberId: {
