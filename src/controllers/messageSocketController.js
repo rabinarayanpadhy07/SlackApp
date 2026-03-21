@@ -1,9 +1,14 @@
-import { addReactionService,createMessageService } from '../services/messageService.js';
+import { addReactionService, createMessageService, deleteMessageService, editMessageService, togglePinMessageService, toggleStarMessageService } from '../services/messageService.js';
 import {
+  MESSAGE_DELETED,
+  MESSAGE_EDITED,
+  MESSAGE_PINNED,
+  MESSAGE_STARRED,
+  MESSAGE_UNPINNED,
+  MESSAGE_UNSTARRED,
+  NEW_MENTION_RECEIVED_EVENT,
   NEW_MESSAGE_EVENT,
-  NEW_MESSAGE_RECEIVED_EVENT,
-  NEW_MENTION_RECEIVED_EVENT
-} from '../utils/common/eventConstants.js';
+  NEW_MESSAGE_RECEIVED_EVENT} from '../utils/common/eventConstants.js';
 
 export default function messageHandlers(io, socket) {
   socket.on(NEW_MESSAGE_EVENT, async function createMessageHandler(data, cb) {
@@ -52,6 +57,50 @@ export default function messageHandlers(io, socket) {
         message: 'Failed to add reaction',
         error: error.message
       });
+    }
+  });
+
+  socket.on('EDIT_MESSAGE', async function (data, cb) {
+    try {
+      const { messageId, body, memberId, channelId } = data;
+      const updatedMessage = await editMessageService(messageId, body, memberId);
+      io.to(channelId).emit(MESSAGE_EDITED, updatedMessage);
+      cb?.({ success: true, message: 'Message edited', data: updatedMessage });
+    } catch (error) {
+      cb?.({ success: false, message: error.message });
+    }
+  });
+
+  socket.on('DELETE_MESSAGE', async function (data, cb) {
+    try {
+      const { messageId, memberId, channelId } = data;
+      const updatedMessage = await deleteMessageService(messageId, memberId);
+      io.to(channelId).emit(MESSAGE_DELETED, updatedMessage);
+      cb?.({ success: true, message: 'Message deleted', data: updatedMessage });
+    } catch (error) {
+      cb?.({ success: false, message: error.message });
+    }
+  });
+
+  socket.on('TOGGLE_PIN_MESSAGE', async function (data, cb) {
+    try {
+      const { messageId, memberId, channelId } = data;
+      const updatedMessage = await togglePinMessageService(messageId, memberId);
+      io.to(channelId).emit(updatedMessage.isPinned ? MESSAGE_PINNED : MESSAGE_UNPINNED, updatedMessage);
+      cb?.({ success: true, message: 'Message pin toggled', data: updatedMessage });
+    } catch (error) {
+      cb?.({ success: false, message: error.message });
+    }
+  });
+
+  socket.on('TOGGLE_STAR_MESSAGE', async function (data, cb) {
+    try {
+      const { messageId, memberId, channelId } = data;
+      const updatedMessage = await toggleStarMessageService(messageId, memberId);
+      io.to(channelId).emit(updatedMessage.stars.includes(memberId) ? MESSAGE_STARRED : MESSAGE_UNSTARRED, updatedMessage);
+      cb?.({ success: true, message: 'Message star toggled', data: updatedMessage });
+    } catch (error) {
+      cb?.({ success: false, message: error.message });
     }
   });
 

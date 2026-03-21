@@ -3,7 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import channelRepository from '../repositories/channelRepostiory.js';
 import messageRepository from '../repositories/messageRepository.js';
 import ClientError from '../utils/errors/clientError.js';
-import { isUserMemberOfWorkspace } from './workspaceService.js';
+import { isUserAdminOfWorkspace,isUserMemberOfWorkspace } from './workspaceService.js';
 
 export const getMessagesService = async (messageParams, page, limit, user) => {
   const channelDetails = await channelRepository.getChannelWithWorkspaceDetails(
@@ -49,4 +49,47 @@ export const getThreadMessagesService = async (messageId) => {
   // Add any specific authorization later if required.
   const messages = await messageRepository.getThreadMessages(messageId);
   return messages;
+};
+
+export const editMessageService = async (messageId, body, memberId) => {
+  const message = await messageRepository.getMessageDetails(messageId);
+  if (!message) throw new Error('Message not found');
+  if ((message.senderId._id || message.senderId).toString() !== memberId.toString()) {
+    throw new Error('You are not authorized to edit this message');
+  }
+  return await messageRepository.editMessage(messageId, body);
+};
+
+export const deleteMessageService = async (messageId, memberId) => {
+  const message = await messageRepository.getMessageDetails(messageId);
+  if (!message) throw new Error('Message not found');
+  
+  if ((message.senderId._id || message.senderId).toString() !== memberId.toString()) {
+     const channelDetails = await channelRepository.getChannelWithWorkspaceDetails(message.channelId);
+     const workspace = channelDetails.workspaceId;
+     const isMemberAdmin = isUserAdminOfWorkspace(workspace, memberId);
+     if (!isMemberAdmin) {
+       throw new Error('You are not authorized to delete this message');
+     }
+  }
+  return await messageRepository.deleteMessage(messageId);
+};
+
+export const togglePinMessageService = async (messageId, memberId) => {
+  const message = await messageRepository.getMessageDetails(messageId);
+  if (!message) throw new Error('Message not found');
+  
+  const channelDetails = await channelRepository.getChannelWithWorkspaceDetails(message.channelId);
+  const workspace = channelDetails.workspaceId;
+  const isMemberAdmin = isUserAdminOfWorkspace(workspace, memberId);
+  
+  if (!isMemberAdmin) {
+    throw new Error('You are not authorized to pin messages');
+  }
+  
+  return await messageRepository.togglePinMessage(messageId, memberId);
+};
+
+export const toggleStarMessageService = async (messageId, memberId) => {
+  return await messageRepository.toggleStarMessage(messageId, memberId);
 };

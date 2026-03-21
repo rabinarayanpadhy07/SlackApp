@@ -46,6 +46,28 @@ const messageSchema = new mongoose.Schema(
           required: true
         }
       }
+    ],
+    isEdited: {
+      type: Boolean,
+      default: false
+    },
+    deletedAt: {
+      type: Date,
+      default: null
+    },
+    isPinned: {
+      type: Boolean,
+      default: false
+    },
+    pinnedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    stars: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      }
     ]
   },
   { timestamps: true }

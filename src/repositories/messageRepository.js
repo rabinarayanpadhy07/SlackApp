@@ -27,6 +27,46 @@ const messageRepository = {
       .populate('mentions', 'username email avatar');
     return message;
   },
+
+  editMessage: async (messageId, body) => {
+    const message = await Message.findById(messageId);
+    if (!message) throw new Error('Message not found');
+    message.body = body;
+    message.isEdited = true;
+    await message.save();
+    return message.populate('senderId', 'username email avatar').then(m => m.populate('mentions', 'username email avatar'));
+  },
+
+  deleteMessage: async (messageId) => {
+    const message = await Message.findById(messageId);
+    if (!message) throw new Error('Message not found');
+    message.deletedAt = new Date();
+    await message.save();
+    return message.populate('senderId', 'username email avatar').then(m => m.populate('mentions', 'username email avatar'));
+  },
+
+  togglePinMessage: async (messageId, memberId) => {
+    const message = await Message.findById(messageId);
+    if (!message) throw new Error('Message not found');
+    message.isPinned = !message.isPinned;
+    message.pinnedBy = message.isPinned ? memberId : null;
+    await message.save();
+    return message.populate('senderId', 'username email avatar').then(m => m.populate('mentions', 'username email avatar'));
+  },
+
+  toggleStarMessage: async (messageId, memberId) => {
+    const message = await Message.findById(messageId);
+    if (!message) throw new Error('Message not found');
+    const index = message.stars.indexOf(memberId);
+    if (index > -1) {
+      message.stars.splice(index, 1);
+    } else {
+      message.stars.push(memberId);
+    }
+    await message.save();
+    return message.populate('senderId', 'username email avatar').then(m => m.populate('mentions', 'username email avatar'));
+  },
+
   addReaction: async (messageId, emoji, memberId) => {
     // Find the message
     const message = await Message.findById(messageId);
