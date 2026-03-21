@@ -10,6 +10,7 @@ import passport from './config/passportConfig.js'; // Added this line
 import { PORT } from './config/serverConfig.js';
 import ChannelSocketHandlers from './controllers/channelSocketController.js';
 import DirectMessageSocketHandlers from './controllers/directMessageSocketController.js';
+import HuddleSocketHandlers from './controllers/huddleSocketController.js';
 import MessageSocketHandlers from './controllers/messageSocketController.js';
 import PresenceSocketHandlers from './controllers/presenceSocketController.js';
 import { verifyEmailController } from './controllers/workspaceController.js';
@@ -52,6 +53,7 @@ io.on('connection', (socket) => {
   ChannelSocketHandlers(io, socket);
   DirectMessageSocketHandlers(io, socket);
   PresenceSocketHandlers(io, socket);
+  HuddleSocketHandlers(io, socket);
 });
 
 server.listen(PORT, async () => {
