@@ -5,10 +5,10 @@ import draftsRouter from './drafts.js';
 import memberRouter from './members.js';
 import messageRouter from './messages.js';
 import paymentRouter from './payment.js';
+import searchRouter from './search.js';
 import threadsRouter from './threads.js';
 import userRouter from './users.js';
 import workspaceRouter from './workspaces.js';
-import searchRouter from './search.js';
 const router = express.Router();
 
 router.use('/users', userRouter);

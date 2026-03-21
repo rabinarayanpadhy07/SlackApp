@@ -1,6 +1,6 @@
-import ReadReceipt from '../schema/readReceipt.js';
-import Message from '../schema/message.js';
 import Channel from '../schema/channel.js';
+import Message from '../schema/message.js';
+import ReadReceipt from '../schema/readReceipt.js';
 
 export const markChannelAsReadService = async (userId, channelId, workspaceId) => {
     return ReadReceipt.findOneAndUpdate(

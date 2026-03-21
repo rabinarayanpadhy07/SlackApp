@@ -1,4 +1,5 @@
 import express from 'express';
+
 import { searchWorkspaceController } from '../../controllers/searchController.js';
 import { isAuthenticated } from '../../middlewares/authMiddleware.js';
 

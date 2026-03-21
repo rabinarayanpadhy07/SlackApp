@@ -1,4 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
+
 import { globalSearchService } from '../services/searchService.js';
 import { customErrorResponse, internalErrorResponse, successResponse } from '../utils/common/responseObjects.js';
 

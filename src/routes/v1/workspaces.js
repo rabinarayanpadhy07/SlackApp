@@ -4,6 +4,7 @@ import {
   createDirectMessageController,
   getDirectMessagesController
 } from '../../controllers/directMessageController.js';
+import { getUnreadChannelsController } from '../../controllers/readReceiptController.js';
 import {
   addChannelToWorkspaceController,
   addMemberToWorkspaceController,
@@ -16,7 +17,6 @@ import {
   resetJoinCodeController,
   updateWorkspaceController
 } from '../../controllers/workspaceController.js';
-import { getUnreadChannelsController } from '../../controllers/readReceiptController.js';
 import { isAuthenticated } from '../../middlewares/authMiddleware.js';
 import {
   addChannelToWorkspaceSchema,

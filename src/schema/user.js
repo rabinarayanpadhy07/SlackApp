@@ -16,7 +16,14 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, 'Password is required']
+      required: function() {
+        return !this.googleId;
+      }
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true
     },
     username: {
       type: String,
@@ -53,10 +60,14 @@ userSchema.pre('save', async function saveUser() {
   }
 
   const user = this;
-  const SALT = bcrypt.genSaltSync(9);
-  const hashedPassword = bcrypt.hashSync(user.password, SALT);
-  user.password = hashedPassword;
-  user.avatar = `https://robohash.org/${user.username}`;
+  if (user.password) {
+    const SALT = bcrypt.genSaltSync(9);
+    const hashedPassword = bcrypt.hashSync(user.password, SALT);
+    user.password = hashedPassword;
+  }
+  if (!user.avatar) {
+    user.avatar = `https://robohash.org/${user.username}`;
+  }
   user.verificationToken = uuidv4().substring(0, 10).toUpperCase();
   user.verificationTokenExpiry = Date.now() + 3600000; // 1 hour
 });

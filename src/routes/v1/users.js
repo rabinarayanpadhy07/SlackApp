@@ -1,6 +1,7 @@
 import express from 'express';
+import passport from 'passport';
 
-import { signIn, signUp } from '../../controllers/userController.js';
+import { googleAuthSuccess,signIn, signUp } from '../../controllers/userController.js';
 import {
   userSignInSchema,
   userSignUpSchema
@@ -11,5 +12,14 @@ const router = express.Router();
 
 router.post('/signup', validate(userSignUpSchema), signUp);
 router.post('/signin', validate(userSignInSchema), signIn);
+
+// Google Auth Routes
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get(
+  '/google/callback',
+  passport.authenticate('google', { failureRedirect: '/auth/signin', session: false }),
+  googleAuthSuccess
+);
 
 export default router;

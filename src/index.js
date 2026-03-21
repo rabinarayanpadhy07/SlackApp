@@ -6,6 +6,7 @@ import { Server } from 'socket.io';
 
 import bullServerAdapter from './config/bullBoardConfig.js';
 import connectDB from './config/dbConfig.js';
+import passport from './config/passportConfig.js'; // Added this line
 import { PORT } from './config/serverConfig.js';
 import ChannelSocketHandlers from './controllers/channelSocketController.js';
 import DirectMessageSocketHandlers from './controllers/directMessageSocketController.js';
@@ -26,6 +27,8 @@ app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(passport.initialize()); // Added this line
 
 app.use('/ui', bullServerAdapter.getRouter());
 
