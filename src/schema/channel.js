@@ -16,6 +16,8 @@ const channelSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+channelSchema.index({ name: 'text' });
+
 const Channel = mongoose.model('Channel', channelSchema);
 
 export default Channel;

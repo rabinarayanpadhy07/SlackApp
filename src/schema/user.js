@@ -45,6 +45,8 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+userSchema.index({ username: 'text' });
+
 userSchema.pre('save', async function saveUser() {
   if (!this.isNew) {
     return;

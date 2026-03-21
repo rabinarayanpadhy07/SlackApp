@@ -1,4 +1,4 @@
-import { createMessageService, addReactionService } from '../services/messageService.js';
+import { addReactionService,createMessageService } from '../services/messageService.js';
 import {
   NEW_MESSAGE_EVENT,
   NEW_MESSAGE_RECEIVED_EVENT
@@ -40,4 +40,15 @@ export default function messageHandlers(io, socket) {
       });
     }
   });
+
+  socket.on('typing_start', (data) => {
+    const { channelId, username } = data;
+    socket.to(channelId).emit('user_typing_start', { username });
+  });
+
+  socket.on('typing_stop', (data) => {
+    const { channelId, username } = data;
+    socket.to(channelId).emit('user_typing_stop', { username });
+  });
+
 }

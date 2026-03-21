@@ -1,11 +1,11 @@
 import { StatusCodes } from 'http-status-codes';
 
+import { getThreadMessagesService } from '../services/messageService.js';
 import {
   customErrorResponse,
   internalErrorResponse,
   successResponse
 } from '../utils/common/responseObjects.js';
-import { getThreadMessagesService } from '../services/messageService.js';
 
 export const listThreadsController = async (req, res) => {
   try {

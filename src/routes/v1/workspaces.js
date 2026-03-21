@@ -16,6 +16,7 @@ import {
   resetJoinCodeController,
   updateWorkspaceController
 } from '../../controllers/workspaceController.js';
+import { getUnreadChannelsController } from '../../controllers/readReceiptController.js';
 import { isAuthenticated } from '../../middlewares/authMiddleware.js';
 import {
   addChannelToWorkspaceSchema,
@@ -38,6 +39,8 @@ router.get('/', isAuthenticated, getWorkspacesUserIsMemberOfController);
 router.delete('/:workspaceId', isAuthenticated, deleteWorkspaceController);
 
 router.get('/:workspaceId', isAuthenticated, getWorkspaceController);
+
+router.get('/:workspaceId/unreads', isAuthenticated, getUnreadChannelsController);
 
 router.get(
   '/join/:joinCode',
