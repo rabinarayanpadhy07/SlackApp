@@ -47,6 +47,13 @@ const userSchema = new mongoose.Schema(
     },
     verificationTokenExpiry: {
       type: Date
+    },
+    twoFactorSecret: {
+      type: String
+    },
+    isTwoFactorEnabled: {
+      type: Boolean,
+      default: false
     }
   },
   { timestamps: true }

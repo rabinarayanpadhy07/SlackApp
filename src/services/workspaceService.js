@@ -277,10 +277,50 @@ export const addMemberToWorkspaceService = async (
   }
 };
 
+export const updateMemberRoleService = async (workspaceId, memberId, role, userId) => {
+  try {
+    const workspace = await workspaceRepository.getById(workspaceId);
+    if (!workspace) throw new ClientError({ explanation: 'Workspace not found', message: 'Workspace not found', statusCode: StatusCodes.NOT_FOUND });
+
+    const isAdmin = isUserAdminOfWorkspace(workspace, userId);
+    if (!isAdmin) throw new ClientError({ explanation: 'Only admins can update roles', message: 'User is not an admin', statusCode: StatusCodes.UNAUTHORIZED });
+
+    // Validate valid role
+    if (!['admin', 'member'].includes(role)) {
+      throw new ClientError({ explanation: 'Invalid Role', message: 'Role must be admin or member', statusCode: StatusCodes.BAD_REQUEST });
+    }
+
+    const response = await workspaceRepository.updateMemberRole(workspaceId, memberId, role);
+    return response;
+  } catch (error) {
+    console.log('updateMemberRoleService error', error);
+    throw error;
+  }
+};
+
+export const removeMemberFromWorkspaceService = async (workspaceId, memberId, userId) => {
+  try {
+    const workspace = await workspaceRepository.getById(workspaceId);
+    if (!workspace) throw new ClientError({ explanation: 'Workspace not found', message: 'Workspace not found', statusCode: StatusCodes.NOT_FOUND });
+
+    // Only allow an admin, or the user themselves (leaving the workspace)
+    const isAdmin = isUserAdminOfWorkspace(workspace, userId);
+    if (!isAdmin && userId.toString() !== memberId.toString()) {
+      throw new ClientError({ explanation: 'Only admins can remove members', message: 'User is not an admin', statusCode: StatusCodes.UNAUTHORIZED });
+    }
+
+    const response = await workspaceRepository.removeMemberFromWorkspace(workspaceId, memberId);
+    return response;
+  } catch (error) {
+    console.log('removeMemberFromWorkspaceService error', error);
+    throw error;
+  }
+};
 export const addChannelToWorkspaceService = async (
   workspaceId,
   channelName,
-  userId
+  userId,
+  type
 ) => {
   try {
     const workspace =
@@ -315,7 +355,9 @@ export const addChannelToWorkspaceService = async (
     console.log('addChannelToWorkspaceService', workspaceId, channelName);
     const response = await workspaceRepository.addChannelToWorkspace(
       workspaceId,
-      channelName
+      channelName,
+      type,
+      userId
     );
 
     return response;

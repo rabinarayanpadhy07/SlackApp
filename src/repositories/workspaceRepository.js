@@ -8,10 +8,19 @@ import crudRepository from './crudRepository.js';
 
 const workspaceRepository = {
   ...crudRepository(Workspace),
-  getWorkspaceDetailsById: async function (workspaceId) {
+  getWorkspaceDetailsById: async function (workspaceId, userId) {
     const workspace = await Workspace.findById(workspaceId)
       .populate('members.memberId', 'username email avatar')
       .populate('channels');
+
+    if (workspace) {
+      workspace.channels = workspace.channels.filter((channel) => {
+        return (
+          channel.type === 'public' ||
+          (channel.type === 'private' && channel.members.includes(userId))
+        );
+      });
+    }
 
     return workspace;
   },
@@ -86,7 +95,7 @@ const workspaceRepository = {
 
     return workspace;
   },
-  addChannelToWorkspace: async function (workspaceId, channelName) {
+  addChannelToWorkspace: async function (workspaceId, channelName, type, userId) {
     const workspace =
       await Workspace.findById(workspaceId).populate('channels');
 
@@ -110,10 +119,17 @@ const workspaceRepository = {
       });
     }
 
-    const channel = await channelRepository.create({
+    const channelData = {
       name: channelName,
-      workspaceId: workspaceId
-    });
+      workspaceId: workspaceId,
+      type: type || 'public'
+    };
+
+    if (type === 'private') {
+      channelData.members = [userId];
+    }
+
+    const channel = await channelRepository.create(channelData);
 
     workspace.channels.push(channel);
     await workspace.save();
@@ -126,6 +142,33 @@ const workspaceRepository = {
     }).populate('members.memberId', 'username email avatar');
 
     return workspaces;
+  },
+  updateMemberRole: async function (workspaceId, memberId, role) {
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace) throw new ClientError({ explanation: 'Workspace not found', message: 'Workspace not found', statusCode: StatusCodes.NOT_FOUND });
+    
+    const memberIndex = workspace.members.findIndex((m) => m.memberId.toString() === memberId.toString());
+    if (memberIndex === -1) throw new ClientError({ explanation: 'Member not found in workspace', message: 'User is not a member of this workspace', statusCode: StatusCodes.NOT_FOUND });
+    
+    workspace.members[memberIndex].role = role;
+    await workspace.save();
+    return workspace;
+  },
+  removeMemberFromWorkspace: async function (workspaceId, memberId) {
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace) throw new ClientError({ explanation: 'Workspace not found', message: 'Workspace not found', statusCode: StatusCodes.NOT_FOUND });
+    
+    // Cannot remove the last member if they are the only admin
+    const admins = workspace.members.filter(m => m.role === 'admin');
+    const targetMember = workspace.members.find(m => m.memberId.toString() === memberId.toString());
+    
+    if (targetMember && targetMember.role === 'admin' && admins.length === 1) {
+      throw new ClientError({ explanation: 'Cannot remove the last admin', message: 'Cannot remove the last admin of the workspace', statusCode: StatusCodes.BAD_REQUEST });
+    }
+
+    workspace.members = workspace.members.filter((m) => m.memberId.toString() !== memberId.toString());
+    await workspace.save();
+    return workspace;
   }
 };
 

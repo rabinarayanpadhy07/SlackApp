@@ -1,7 +1,12 @@
 import { StatusCodes } from 'http-status-codes';
 
 import { FRONTEND_URL } from '../config/serverConfig.js';
-import { signInService, signUpService } from '../services/userService.js';
+import {
+  setup2FAService,
+  signInService,
+  signUpService,
+  verify2FAService
+} from '../services/userService.js';
 import { createJWT } from '../utils/common/authUtils.js';
 import {
   customErrorResponse,
@@ -68,5 +73,55 @@ export const googleAuthSuccess = (req, res) => {
   } catch (error) {
     console.log('Google auth controller error', error);
     return res.redirect(`${FRONTEND_URL}/auth/signin?error=internal_error`);
+  }
+};
+
+export const setup2FA = async (req, res) => {
+  try {
+    const response = await setup2FAService(req.user);
+    return res
+      .status(StatusCodes.OK)
+      .json(successResponse(response, '2FA setup initiated successfully'));
+  } catch (error) {
+    console.log('Setup 2FA controller error', error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json(customErrorResponse(error));
+    }
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(internalErrorResponse(error));
+  }
+};
+
+export const verify2FA = async (req, res) => {
+  try {
+    const { token, userId } = req.body;
+    // We might get userId from req.user if they are already logged in (setting up 2FA)
+    // Or from req.body if they are signing in.
+    const idToVerify = req.user || userId;
+    
+    if (!idToVerify || !token) {
+      return res.status(StatusCodes.BAD_REQUEST).json(
+        customErrorResponse({
+          explanation: 'User ID and token are required',
+          message: 'Missing required parameters'
+        })
+      );
+    }
+
+    const response = await verify2FAService(idToVerify, token);
+    return res
+      .status(StatusCodes.OK)
+      .json(successResponse(response, '2FA verified successfully'));
+  } catch (error) {
+    console.log('Verify 2FA controller error', error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json(customErrorResponse(error));
+    }
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(internalErrorResponse(error));
   }
 };

@@ -14,9 +14,10 @@ import {
   getWorkspaceController,
   getWorkspacesUserIsMemberOfController,
   joinWorkspaceController,
+  removeMemberFromWorkspaceController,
   resetJoinCodeController,
-  updateWorkspaceController
-} from '../../controllers/workspaceController.js';
+  updateMemberRoleController,
+  updateWorkspaceController} from '../../controllers/workspaceController.js';
 import { isAuthenticated } from '../../middlewares/authMiddleware.js';
 import {
   addChannelToWorkspaceSchema,
@@ -57,6 +58,18 @@ router.put(
   isAuthenticated,
   validate(addMemberToWorkspaceSchema),
   addMemberToWorkspaceController
+);
+
+router.put(
+  '/:workspaceId/members/:memberId/role',
+  isAuthenticated,
+  updateMemberRoleController
+);
+
+router.delete(
+  '/:workspaceId/members/:memberId',
+  isAuthenticated,
+  removeMemberFromWorkspaceController
 );
 
 router.put(

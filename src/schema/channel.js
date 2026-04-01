@@ -10,6 +10,21 @@ const channelSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Workspace',
       required: [true, 'Workspace ID is required']
+    },
+    type: {
+      type: String,
+      enum: ['public', 'private'],
+      default: 'public'
+    },
+    members: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      }
+    ],
+    isArchived: {
+      type: Boolean,
+      default: false
     }
   },
 

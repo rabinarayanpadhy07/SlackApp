@@ -10,7 +10,9 @@ import {
   getWorkspaceService,
   getWorkspacesUserIsMemberOfService,
   joinWorkspaceService,
+  removeMemberFromWorkspaceService,
   resetWorkspaceJoinCodeService,
+  updateMemberRoleService,
   updateWorkspaceService
 } from '../services/workspaceService.js';
 import {
@@ -165,6 +167,45 @@ export const addMemberToWorkspaceController = async (req, res) => {
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json(internalErrorResponse(error));
+  }
+};
+
+export const updateMemberRoleController = async (req, res) => {
+  try {
+    const response = await updateMemberRoleService(
+      req.params.workspaceId,
+      req.params.memberId,
+      req.body.role,
+      req.user
+    );
+    return res
+      .status(StatusCodes.OK)
+      .json(successResponse(response, 'Member role updated successfully'));
+  } catch (error) {
+    console.log('update member role controller error', error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json(customErrorResponse(error));
+    }
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(internalErrorResponse(error));
+  }
+};
+
+export const removeMemberFromWorkspaceController = async (req, res) => {
+  try {
+    const response = await removeMemberFromWorkspaceService(
+      req.params.workspaceId,
+      req.params.memberId,
+      req.user
+    );
+    return res
+      .status(StatusCodes.OK)
+      .json(successResponse(response, 'Member removed from workspace successfully'));
+  } catch (error) {
+    console.log('remove member from workspace controller error', error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json(customErrorResponse(error));
+    }
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(internalErrorResponse(error));
   }
 };
 
