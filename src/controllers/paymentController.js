@@ -16,7 +16,7 @@ export const createOrderController = async (req, res) => {
 
         console.log(order);
 
-        await createPaymentService(order.id, order.amount)
+        await createPaymentService(order.id, order.amount, req.user._id)
 
         if(!order) {
             throw new Error('Failed to create order');

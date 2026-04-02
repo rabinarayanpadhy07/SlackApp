@@ -4,10 +4,11 @@ import { RAZORPAY_KEY_SECRET } from "../config/serverConfig.js";
 import paymentRepository from "../repositories/paymentRepository.js";
 import userRepository from "../repositories/userRepository.js";
 
-export const createPaymentService = async (orderId, amount) => {
+export const createPaymentService = async (orderId, amount, userId) => {
     const payment = await paymentRepository.create({
         orderId,
-        amount
+        amount,
+        userId
     });
     return payment;
 };

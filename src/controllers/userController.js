@@ -81,7 +81,8 @@ export const googleAuthSuccess = (req, res) => {
       avatar: req.user.avatar,
       email: req.user.email,
       _id: req.user._id,
-      plan: req.user.plan
+      plan: req.user.plan,
+      isSuperAdmin: req.user.isSuperAdmin
     };
 
     const query = new URLSearchParams({

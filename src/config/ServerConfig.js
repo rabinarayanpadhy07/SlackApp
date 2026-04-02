@@ -57,3 +57,10 @@ export const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5-mini';
 
 export const OPENAI_BASE_URL =
   process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
+
+export const SUPER_ADMIN_EMAILS = (
+  process.env.SUPER_ADMIN_EMAILS || process.env.SUPER_ADMIN_EMAIL || ''
+)
+  .split(',')
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);

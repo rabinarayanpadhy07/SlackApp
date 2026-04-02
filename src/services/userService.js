@@ -1,8 +1,6 @@
 import bcrypt from 'bcrypt';
 import { StatusCodes } from 'http-status-codes';
 import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const { authenticator } = require('otplib');
 import qrcode from 'qrcode';
 
 import { ENABLE_EMAIL_VERIFICATION } from '../config/serverConfig.js';
@@ -10,12 +8,18 @@ import { addEmailtoMailQueue } from '../producers/mailQueueProducer.js';
 import userRepository from '../repositories/userRepository.js';
 import { createJWT } from '../utils/common/authUtils.js';
 import { verifyEmailMail } from '../utils/common/mailObject.js';
+import { applySuperAdminDefaults } from '../utils/common/superAdminUtils.js';
 import ClientError from '../utils/errors/clientError.js';
 import ValidationError from '../utils/errors/validationError.js';
+
+const require = createRequire(import.meta.url);
+const { authenticator } = require('otplib');
 
 export const signUpService = async (data) => {
   try {
     const newUser = await userRepository.signUpUser(data);
+    applySuperAdminDefaults(newUser);
+    await newUser.save();
     if (ENABLE_EMAIL_VERIFICATION === 'true') {
       // send verification email
       addEmailtoMailQueue({
@@ -100,6 +104,20 @@ export const signInService = async (data) => {
       });
     }
 
+    if (!user.isActive) {
+      throw new ClientError({
+        explanation: 'This account has been suspended',
+        message: 'Your account is currently suspended',
+        statusCode: StatusCodes.FORBIDDEN
+      });
+    }
+
+    const wasSuperAdmin = user.isSuperAdmin;
+    applySuperAdminDefaults(user);
+    if (user.isSuperAdmin !== wasSuperAdmin) {
+      await user.save();
+    }
+
     if (user.isTwoFactorEnabled) {
       return {
         _id: user._id,
@@ -114,6 +132,7 @@ export const signInService = async (data) => {
       email: user.email,
       _id: user._id,
       plan: user.plan,
+      isSuperAdmin: user.isSuperAdmin,
       token: createJWT({ id: user._id, email: user.email })
     };
   } catch (error) {
@@ -172,6 +191,11 @@ export const verify2FAService = async (userId, token) => {
     }
 
     user.isTwoFactorEnabled = true;
+    const wasSuperAdmin = user.isSuperAdmin;
+    applySuperAdminDefaults(user);
+    if (user.isSuperAdmin !== wasSuperAdmin) {
+      user.markModified('isSuperAdmin');
+    }
     await user.save();
 
     return {
@@ -181,6 +205,7 @@ export const verify2FAService = async (userId, token) => {
       email: user.email,
       _id: user._id,
       plan: user.plan,
+      isSuperAdmin: user.isSuperAdmin,
       token: createJWT({ id: user._id, email: user.email })
     };
   } catch (error) {

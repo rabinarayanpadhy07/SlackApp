@@ -35,7 +35,15 @@ const workspaceSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Channel'
     }
-  ]
+  ],
+  isArchived: {
+    type: Boolean,
+    default: false
+  },
+  archivedAt: {
+    type: Date,
+    default: null
+  }
 });
 
 const Workspace = mongoose.model('Workspace', workspaceSchema);

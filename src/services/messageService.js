@@ -9,10 +9,11 @@ export const getMessagesService = async (messageParams, page, limit, user) => {
   const channelDetails = await channelRepository.getChannelWithWorkspaceDetails(
     messageParams.channelId
   );
+  const userId = user?._id || user;
 
   const workspace = channelDetails.workspaceId;
 
-  const isMember = isUserMemberOfWorkspace(workspace, user);
+  const isMember = isUserMemberOfWorkspace(workspace, userId);
 
   if (!isMember) {
     throw new ClientError({

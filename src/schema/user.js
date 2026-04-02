@@ -59,6 +59,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['Normal', 'Paid'],
       default: 'Normal'
+    },
+    isSuperAdmin: {
+      type: Boolean,
+      default: false
+    },
+    isActive: {
+      type: Boolean,
+      default: true
+    },
+    suspendedAt: {
+      type: Date,
+      default: null
     }
   },
   { timestamps: true }

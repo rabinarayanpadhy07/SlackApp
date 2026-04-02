@@ -9,7 +9,10 @@ import crudRepository from './crudRepository.js';
 const workspaceRepository = {
   ...crudRepository(Workspace),
   getWorkspaceDetailsById: async function (workspaceId, userId) {
-    const workspace = await Workspace.findById(workspaceId)
+    const workspace = await Workspace.findOne({
+      _id: workspaceId,
+      isArchived: { $ne: true }
+    })
       .populate('members.memberId', 'username email avatar')
       .populate('channels');
 
@@ -41,7 +44,8 @@ const workspaceRepository = {
   },
   getWorkspaceByJoinCode: async function (joinCode) {
     const workspace = await Workspace.findOne({
-      joinCode
+      joinCode,
+      isArchived: { $ne: true }
     });
 
     if (!workspace) {
@@ -138,7 +142,8 @@ const workspaceRepository = {
   },
   fetchAllWorkspaceByMemberId: async function (memberId) {
     const workspaces = await Workspace.find({
-      'members.memberId': memberId
+      'members.memberId': memberId,
+      isArchived: { $ne: true }
     }).populate('members.memberId', 'username email avatar');
 
     return workspaces;

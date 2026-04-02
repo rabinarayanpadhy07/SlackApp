@@ -2,6 +2,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 
 import User from '../schema/user.js';
+import { applySuperAdminDefaults } from '../utils/common/superAdminUtils.js';
 import { 
     GOOGLE_CALLBACK_URL, 
     GOOGLE_CLIENT_ID, 
@@ -28,6 +29,7 @@ passport.use(
                 if (user) {
                     // Update user with googleId
                     user.googleId = profile.id;
+                    applySuperAdminDefaults(user);
                     await user.save();
                     return done(null, user);
                 }
@@ -39,6 +41,8 @@ passport.use(
                     username: profile.displayName.replace(/\s+/g, '').toLowerCase() + Math.floor(Math.random() * 1000),
                     isVerified: true // Google users are verified
                 });
+                applySuperAdminDefaults(newUser);
+                await newUser.save();
 
                 return done(null, newUser);
             } catch (error) {

@@ -7,6 +7,7 @@ import {
   customErrorResponse,
   internalErrorResponse
 } from '../utils/common/responseObjects.js';
+import { applySuperAdminDefaults } from '../utils/common/superAdminUtils.js';
 
 export const isAuthenticated = async (req, res, next) => {
   try {
@@ -32,6 +33,29 @@ export const isAuthenticated = async (req, res, next) => {
     }
 
     const user = await userRepository.getById(response.id);
+    if (!user) {
+      return res.status(StatusCodes.FORBIDDEN).json(
+        customErrorResponse({
+          explanation: 'Invalid data sent from the client',
+          message: 'Invalid auth token provided'
+        })
+      );
+    }
+
+    if (!user.isActive) {
+      return res.status(StatusCodes.FORBIDDEN).json(
+        customErrorResponse({
+          explanation: 'This account has been suspended',
+          message: 'Your account is currently suspended'
+        })
+      );
+    }
+
+    const wasSuperAdmin = user?.isSuperAdmin;
+    applySuperAdminDefaults(user);
+    if (user && user.isSuperAdmin !== wasSuperAdmin) {
+      await user.save();
+    }
     req.user = user; // expose full user object for downstream services
     next();
   } catch (error) {
