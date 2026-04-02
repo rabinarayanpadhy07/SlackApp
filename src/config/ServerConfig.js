@@ -50,3 +50,10 @@ export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 export const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL;
 
 export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+export const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+export const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5-mini';
+
+export const OPENAI_BASE_URL =
+  process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';

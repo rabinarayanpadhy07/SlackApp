@@ -25,6 +25,43 @@ const channelSchema = new mongoose.Schema(
     isArchived: {
       type: Boolean,
       default: false
+    },
+    latestHuddleSummary: {
+      overview: {
+        type: String
+      },
+      keyPoints: [
+        {
+          type: String
+        }
+      ],
+      actionItems: [
+        {
+          type: String
+        }
+      ],
+      followUps: [
+        {
+          type: String
+        }
+      ],
+      participants: [
+        {
+          type: String
+        }
+      ],
+      transcriptCount: {
+        type: Number
+      },
+      startedAt: {
+        type: Date
+      },
+      endedAt: {
+        type: Date
+      },
+      generatedAt: {
+        type: Date
+      }
     }
   },
 

@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 
 import channelRepository from '../repositories/channelRepostiory.js';
 import messageRepository from '../repositories/messageRepository.js';
+import userRepository from '../repositories/userRepository.js';
 import workspaceRepository from '../repositories/workspaceRepository.js';
 import ReadReceipt from '../schema/readReceipt.js';
 import ClientError from '../utils/errors/clientError.js';
@@ -11,6 +12,7 @@ export const getChannelByIdService = async (channelId, userId) => {
   try {
     const channel =
       await channelRepository.getChannelWithWorkspaceDetails(channelId);
+    const user = await userRepository.getById(userId);
 
     if (!channel || !channel.workspaceId) {
       throw new ClientError({
@@ -50,7 +52,10 @@ export const getChannelByIdService = async (channelId, userId) => {
       name: channel.name,
       createdAt: channel.createdAt,
       updatedAt: channel.updatedAt,
-      workspaceId: channel.workspaceId
+      workspaceId: channel.workspaceId,
+      aiAccess: user?.plan === 'Paid',
+      latestHuddleSummary:
+        user?.plan === 'Paid' ? channel.latestHuddleSummary || null : null
     };
   } catch (error) {
     console.log('Get channel by ID service error', error);

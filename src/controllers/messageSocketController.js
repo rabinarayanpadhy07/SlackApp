@@ -1,4 +1,6 @@
+import { generateReplySuggestions } from '../services/aiAssistantService.js';
 import { addReactionService, createMessageService, deleteMessageService, editMessageService, togglePinMessageService, toggleStarMessageService } from '../services/messageService.js';
+import { assertPaidPlanAccess, getSocketUserFromToken } from '../services/socketFeatureAccessService.js';
 import {
   MESSAGE_DELETED,
   MESSAGE_EDITED,
@@ -112,6 +114,24 @@ export default function messageHandlers(io, socket) {
   socket.on('typing_stop', (data) => {
     const { channelId, username } = data;
     socket.to(channelId).emit('user_typing_stop', { username });
+  });
+
+  socket.on('GENERATE_AI_REPLY', async (data, cb) => {
+    try {
+      const user = await getSocketUserFromToken(data?.token);
+      assertPaidPlanAccess(user);
+      const suggestions = await generateReplySuggestions(data);
+      cb?.({
+        success: true,
+        message: 'Generated reply suggestions',
+        data: suggestions
+      });
+    } catch (error) {
+      cb?.({
+        success: false,
+        message: error.message || 'Failed to generate reply suggestions'
+      });
+    }
   });
 
 }

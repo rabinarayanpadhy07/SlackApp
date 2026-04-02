@@ -18,6 +18,17 @@ const channelRepository = {
     }
 
     return Channel.findOne(query);
+  },
+  updateLatestHuddleSummary: async function (channelId, summary) {
+    return Channel.findByIdAndUpdate(
+      channelId,
+      {
+        latestHuddleSummary: summary
+      },
+      {
+        new: true
+      }
+    );
   }
 };
 
