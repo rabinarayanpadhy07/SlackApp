@@ -25,7 +25,7 @@ export const createWorkspaceController = async (req, res) => {
   try {
     const response = await createWorkspaceService({
       ...req.body,
-      owner: req.user
+      owner: req.user._id
     });
     return res
       .status(StatusCodes.CREATED)
@@ -44,7 +44,7 @@ export const createWorkspaceController = async (req, res) => {
 
 export const getWorkspacesUserIsMemberOfController = async (req, res) => {
   try {
-    const response = await getWorkspacesUserIsMemberOfService(req.user);
+    const response = await getWorkspacesUserIsMemberOfService(req.user._id);
     return res
       .status(StatusCodes.OK)
       .json(successResponse(response, 'Workspaces fetched successfully'));
@@ -64,7 +64,7 @@ export const deleteWorkspaceController = async (req, res) => {
   try {
     const response = await deleteWorkspaceService(
       req.params.workspaceId,
-      req.user
+      req.user._id
     );
     return res
       .status(StatusCodes.OK)
@@ -85,7 +85,7 @@ export const getWorkspaceController = async (req, res) => {
   try {
     const response = await getWorkspaceService(
       req.params.workspaceId,
-      req.user
+      req.user._id
     );
     return res
       .status(StatusCodes.OK)
@@ -106,7 +106,7 @@ export const getWorkspaceByJoinCodeController = async (req, res) => {
   try {
     const response = await getWorkspaceByJoinCodeService(
       req.params.joinCode,
-      req.user
+      req.user._id
     );
     return res
       .status(StatusCodes.OK)
@@ -128,7 +128,7 @@ export const updateWorkspaceController = async (req, res) => {
     const response = await updateWorkspaceService(
       req.params.workspaceId,
       req.body,
-      req.user
+      req.user._id
     );
     return res
       .status(StatusCodes.OK)
@@ -151,7 +151,7 @@ export const addMemberToWorkspaceController = async (req, res) => {
       req.params.workspaceId,
       req.body.memberId,
       req.body.role || 'member',
-      req.user
+      req.user._id
     );
     return res
       .status(StatusCodes.OK)
@@ -176,7 +176,7 @@ export const updateMemberRoleController = async (req, res) => {
       req.params.workspaceId,
       req.params.memberId,
       req.body.role,
-      req.user
+      req.user._id
     );
     return res
       .status(StatusCodes.OK)
@@ -195,7 +195,7 @@ export const removeMemberFromWorkspaceController = async (req, res) => {
     const response = await removeMemberFromWorkspaceService(
       req.params.workspaceId,
       req.params.memberId,
-      req.user
+      req.user._id
     );
     return res
       .status(StatusCodes.OK)
@@ -214,7 +214,7 @@ export const addChannelToWorkspaceController = async (req, res) => {
     const response = await addChannelToWorkspaceService(
       req.params.workspaceId,
       req.body.channelName,
-      req.user
+      req.user._id
     );
     return res
       .status(StatusCodes.OK)
@@ -237,7 +237,7 @@ export const resetJoinCodeController = async (req, res) => {
   try {
     const response = await resetWorkspaceJoinCodeService(
       req.params.workspaceId,
-      req.user
+      req.user._id
     );
     return res
       .status(StatusCodes.OK)
@@ -259,7 +259,7 @@ export const joinWorkspaceController = async (req, res) => {
     const response = await joinWorkspaceService(
       req.params.workspaceId,
       req.body.joinCode,
-      req.user
+      req.user._id
     );
     return res
       .status(StatusCodes.OK)

@@ -32,13 +32,45 @@ const isChannelAlreadyPartOfWorkspace = (workspace, channelName) => {
   );
 };
 
+const isPaidPlan = (user) => user?.plan === 'Paid';
+const getWorkspaceOwnerId = (workspace) => {
+  const ownerId = workspace?.ownerId?._id || workspace?.ownerId;
+  if (ownerId) {
+    return ownerId.toString();
+  }
+
+  const firstAdmin = workspace?.members?.find((member) => member.role === 'admin');
+  const firstAdminId = firstAdmin?.memberId?._id || firstAdmin?.memberId;
+  return firstAdminId?.toString();
+};
+
+const isWorkspaceOwner = (workspace, userId) => {
+  return getWorkspaceOwnerId(workspace) === userId?.toString();
+};
+
 export const createWorkspaceService = async (workspaceData) => {
   try {
+    const ownerId = workspaceData.owner;
+    const user = await userRepository.getById(ownerId);
+    
+    if (!isPaidPlan(user)) {
+      const userWorkspaces = await workspaceRepository.fetchAllWorkspaceByMemberId(ownerId);
+      const adminWorkspaces = userWorkspaces.filter(ws => isUserAdminOfWorkspace(ws, ownerId));
+      if (adminWorkspaces.length >= 1) {
+        throw new ClientError({
+          explanation: 'Normal plan users can only create 1 workspace. Upgrade to Paid for unlimited workspaces.',
+          message: 'Workspace limit reached',
+          statusCode: StatusCodes.FORBIDDEN
+        });
+      }
+    }
+
     const joinCode = uuidv4().substring(0, 6).toUpperCase();
 
     const response = await workspaceRepository.create({
       name: workspaceData.name,
       description: workspaceData.description,
+      ownerId,
       joinCode
     });
 
@@ -120,7 +152,7 @@ export const deleteWorkspaceService = async (workspaceId, userId) => {
 export const getWorkspaceService = async (workspaceId, userId) => {
   try {
     const workspace =
-      await workspaceRepository.getWorkspaceDetailsById(workspaceId);
+      await workspaceRepository.getWorkspaceDetailsById(workspaceId, userId);
     if (!workspace) {
       throw new ClientError({
         explanation: 'Invalid data sent from the client',
@@ -155,15 +187,13 @@ export const getWorkspaceByJoinCodeService = async (joinCode, userId) => {
       });
     }
 
-    const isMember = isUserMemberOfWorkspace(workspace, userId);
-    if (!isMember) {
-      throw new ClientError({
-        explanation: 'User is not a member of the workspace',
-        message: 'User is not a member of the workspace',
-        statusCode: StatusCodes.UNAUTHORIZED
-      });
-    }
-    return workspace;
+    const isMember = Boolean(isUserMemberOfWorkspace(workspace, userId));
+    return {
+      _id: workspace._id,
+      name: workspace.name,
+      joinCode: workspace.joinCode,
+      isMember
+    };
   } catch (error) {
     console.log('Get workspace by join code service error', error);
     throw error;
@@ -284,10 +314,24 @@ export const updateMemberRoleService = async (workspaceId, memberId, role, userI
 
     const isAdmin = isUserAdminOfWorkspace(workspace, userId);
     if (!isAdmin) throw new ClientError({ explanation: 'Only admins can update roles', message: 'User is not an admin', statusCode: StatusCodes.UNAUTHORIZED });
+    if (!isWorkspaceOwner(workspace, userId)) {
+      throw new ClientError({
+        explanation: 'Only the workspace owner can promote or demote admins',
+        message: 'Owner permission required',
+        statusCode: StatusCodes.FORBIDDEN
+      });
+    }
 
-    // Validate valid role
     if (!['admin', 'member'].includes(role)) {
       throw new ClientError({ explanation: 'Invalid Role', message: 'Role must be admin or member', statusCode: StatusCodes.BAD_REQUEST });
+    }
+
+    if (isWorkspaceOwner(workspace, memberId) && role !== 'admin') {
+      throw new ClientError({
+        explanation: 'The workspace owner must remain an admin',
+        message: 'Cannot demote workspace owner',
+        statusCode: StatusCodes.BAD_REQUEST
+      });
     }
 
     const response = await workspaceRepository.updateMemberRole(workspaceId, memberId, role);
@@ -303,10 +347,30 @@ export const removeMemberFromWorkspaceService = async (workspaceId, memberId, us
     const workspace = await workspaceRepository.getById(workspaceId);
     if (!workspace) throw new ClientError({ explanation: 'Workspace not found', message: 'Workspace not found', statusCode: StatusCodes.NOT_FOUND });
 
-    // Only allow an admin, or the user themselves (leaving the workspace)
     const isAdmin = isUserAdminOfWorkspace(workspace, userId);
     if (!isAdmin && userId.toString() !== memberId.toString()) {
       throw new ClientError({ explanation: 'Only admins can remove members', message: 'User is not an admin', statusCode: StatusCodes.UNAUTHORIZED });
+    }
+
+    const targetMember = workspace.members.find((member) => {
+      const targetId = member.memberId?._id || member.memberId;
+      return targetId?.toString() === memberId.toString();
+    });
+
+    if (targetMember?.role === 'admin' && !isWorkspaceOwner(workspace, userId)) {
+      throw new ClientError({
+        explanation: 'Only the workspace owner can remove an admin',
+        message: 'Owner permission required',
+        statusCode: StatusCodes.FORBIDDEN
+      });
+    }
+
+    if (isWorkspaceOwner(workspace, memberId)) {
+      throw new ClientError({
+        explanation: 'The workspace owner cannot be removed from the workspace',
+        message: 'Cannot remove workspace owner',
+        statusCode: StatusCodes.BAD_REQUEST
+      });
     }
 
     const response = await workspaceRepository.removeMemberFromWorkspace(workspaceId, memberId);
@@ -340,6 +404,17 @@ export const addChannelToWorkspaceService = async (
         message: 'User is not an admin of the workspace',
         statusCode: StatusCodes.UNAUTHORIZED
       });
+    }
+
+    const user = await userRepository.getById(userId);
+    if (!isPaidPlan(user)) {
+      if (workspace.channels.length >= 2) {
+        throw new ClientError({
+          explanation: 'Normal plan users can only create 2 channels per workspace. Upgrade to Paid for unlimited channels.',
+          message: 'Channel limit reached',
+          statusCode: StatusCodes.FORBIDDEN
+        });
+      }
     }
     const isChannelPartOfWorkspace = isChannelAlreadyPartOfWorkspace(
       workspace,

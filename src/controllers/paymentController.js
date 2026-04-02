@@ -40,11 +40,11 @@ export const createOrderController = async (req, res) => {
 export const capturePaymentController = async (req, res) => {
     try {
         console.log('Request body', req.body);
-        await updatePaymentStatusService(req.body.orderId, req.body.status, req.body.paymentId, req.body.signature);
+        const response = await updatePaymentStatusService(req.body.orderId, req.body.status, req.body.paymentId, req.body.signature, req.user._id);
         return res.status(StatusCodes.OK).json({
             success: true,
-            message: 'Payment captured successfully',
-            data: ''
+            message: req.body.status === 'success' ? 'Payment captured successfully' : 'Payment status updated',
+            data: response
         });
 
     } catch (error) {

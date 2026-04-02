@@ -7,6 +7,6 @@ const paymentRouter = express.Router();
 
 paymentRouter.post('/order', isAuthenticated, createOrderController);
 
-paymentRouter.post('/capture', capturePaymentController);
+paymentRouter.post('/capture', isAuthenticated, capturePaymentController);
 
 export default paymentRouter;

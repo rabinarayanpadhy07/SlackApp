@@ -6,6 +6,18 @@ const channelRepository = {
   getChannelWithWorkspaceDetails: async function (channelId) {
     const channel = await Channel.findById(channelId).populate('workspaceId');
     return channel;
+  },
+  getByWorkspaceAndName: async function (workspaceId, name, excludeChannelId) {
+    const query = {
+      workspaceId,
+      name: new RegExp(`^${name}$`, 'i')
+    };
+
+    if (excludeChannelId) {
+      query._id = { $ne: excludeChannelId };
+    }
+
+    return Channel.findOne(query);
   }
 };
 

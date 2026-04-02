@@ -154,6 +154,14 @@ const workspaceRepository = {
     await workspace.save();
     return workspace;
   },
+  removeChannelFromWorkspace: async function (workspaceId, channelId) {
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace) throw new ClientError({ explanation: 'Workspace not found', message: 'Workspace not found', statusCode: StatusCodes.NOT_FOUND });
+
+    workspace.channels = workspace.channels.filter((channel) => channel.toString() !== channelId.toString());
+    await workspace.save();
+    return workspace;
+  },
   removeMemberFromWorkspace: async function (workspaceId, memberId) {
     const workspace = await Workspace.findById(workspaceId);
     if (!workspace) throw new ClientError({ explanation: 'Workspace not found', message: 'Workspace not found', statusCode: StatusCodes.NOT_FOUND });

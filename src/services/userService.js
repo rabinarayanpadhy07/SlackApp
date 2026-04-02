@@ -113,6 +113,7 @@ export const signInService = async (data) => {
       avatar: user.avatar,
       email: user.email,
       _id: user._id,
+      plan: user.plan,
       token: createJWT({ id: user._id, email: user.email })
     };
   } catch (error) {
@@ -179,6 +180,7 @@ export const verify2FAService = async (userId, token) => {
       avatar: user.avatar,
       email: user.email,
       _id: user._id,
+      plan: user.plan,
       token: createJWT({ id: user._id, email: user.email })
     };
   } catch (error) {

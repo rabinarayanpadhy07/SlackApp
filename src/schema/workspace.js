@@ -9,6 +9,10 @@ const workspaceSchema = new mongoose.Schema({
   description: {
     type: String
   },
+  ownerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   members: [
     {
       memberId: {

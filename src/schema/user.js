@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: function() {
+      required: function () {
         return !this.googleId;
       }
     },
@@ -54,6 +54,11 @@ const userSchema = new mongoose.Schema(
     isTwoFactorEnabled: {
       type: Boolean,
       default: false
+    },
+    plan: {
+      type: String,
+      enum: ['Normal', 'Paid'],
+      default: 'Normal'
     }
   },
   { timestamps: true }

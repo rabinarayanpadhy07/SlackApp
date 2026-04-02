@@ -27,6 +27,9 @@ const messageRepository = {
       .populate('mentions', 'username email avatar');
     return message;
   },
+  deleteManyByChannelId: async (channelId) => {
+    return Message.deleteMany({ channelId });
+  },
 
   editMessage: async (messageId, body) => {
     const message = await Message.findById(messageId);

@@ -51,10 +51,28 @@ export const signIn = async (req, res) => {
   }
 };
 
+const resolveFrontendOrigin = (rawOrigin) => {
+  if (!rawOrigin) {
+    return FRONTEND_URL;
+  }
+
+  try {
+    const parsedOrigin = new URL(rawOrigin);
+    if (!['http:', 'https:'].includes(parsedOrigin.protocol)) {
+      return FRONTEND_URL;
+    }
+    return parsedOrigin.origin;
+  } catch {
+    return FRONTEND_URL;
+  }
+};
+
 export const googleAuthSuccess = (req, res) => {
   try {
+    const frontendOrigin = resolveFrontendOrigin(req.query.state);
+
     if (!req.user) {
-      return res.redirect(`${FRONTEND_URL}/auth/signin?error=auth_failed`);
+      return res.redirect(`${frontendOrigin}/auth/signin?error=auth_failed`);
     }
 
     const token = createJWT({ id: req.user._id, email: req.user.email });
@@ -62,14 +80,16 @@ export const googleAuthSuccess = (req, res) => {
       username: req.user.username,
       avatar: req.user.avatar,
       email: req.user.email,
-      _id: req.user._id
+      _id: req.user._id,
+      plan: req.user.plan
     };
 
-    const userString = JSON.stringify(user);
-    
-    // Redirect to frontend with token and user data
-    // We'll use a specific route on the frontend to handle this
-    return res.redirect(`${FRONTEND_URL}/auth/google/success?token=${token}&user=${encodeURIComponent(userString)}`);
+    const query = new URLSearchParams({
+      token,
+      user: JSON.stringify(user)
+    });
+
+    return res.redirect(`${frontendOrigin}/auth/google/success?${query.toString()}`);
   } catch (error) {
     console.log('Google auth controller error', error);
     return res.redirect(`${FRONTEND_URL}/auth/signin?error=internal_error`);
