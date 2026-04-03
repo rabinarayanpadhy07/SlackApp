@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { StatusCodes } from 'http-status-codes';
-import { authenticator } from 'otplib';
+import { OTP } from 'otplib';
 import qrcode from 'qrcode';
 
 import {
@@ -21,6 +21,8 @@ import ValidationError from '../utils/errors/validationError.js';
 
 const hashToken = (token) =>
   crypto.createHash('sha256').update(token).digest('hex');
+
+const otp = new OTP();
 
 export const signUpService = async (data) => {
   try {
@@ -159,11 +161,15 @@ export const setup2FAService = async (userId) => {
       });
     }
 
-    const secret = authenticator.generateSecret();
+    const secret = otp.generateSecret();
     user.twoFactorSecret = secret;
     await user.save();
 
-    const otpauthUrl = authenticator.keyuri(user.email, 'SlackApp', secret);
+    const otpauthUrl = otp.generateURI({
+      issuer: 'SlackApp',
+      label: user.email,
+      secret
+    });
     const qrCode = await qrcode.toDataURL(otpauthUrl);
 
     return { qrCode, secret };
@@ -184,12 +190,12 @@ export const verify2FAService = async (userId, token) => {
       });
     }
 
-    const isValid = authenticator.verify({
+    const verificationResult = otp.verifySync({
       token,
       secret: user.twoFactorSecret
     });
 
-    if (!isValid) {
+    if (!verificationResult.valid) {
       throw new ClientError({
         explanation: 'Invalid token',
         message: 'Invalid 2FA token provided',
