@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { StatusCodes } from 'http-status-codes';
-import otplib from 'otplib';
+import * as otplib from 'otplib';
 import qrcode from 'qrcode';
 
 import {
