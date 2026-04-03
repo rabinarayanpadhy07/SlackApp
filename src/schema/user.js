@@ -48,6 +48,12 @@ const userSchema = new mongoose.Schema(
     verificationTokenExpiry: {
       type: Date
     },
+    passwordResetToken: {
+      type: String
+    },
+    passwordResetTokenExpiry: {
+      type: Date
+    },
     twoFactorSecret: {
       type: String
     },
@@ -79,16 +85,18 @@ const userSchema = new mongoose.Schema(
 userSchema.index({ username: 'text' });
 
 userSchema.pre('save', async function saveUser() {
-  if (!this.isNew) {
-    return;
-  }
-
   const user = this;
-  if (user.password) {
+
+  if (user.isModified('password') && user.password) {
     const SALT = bcrypt.genSaltSync(9);
     const hashedPassword = bcrypt.hashSync(user.password, SALT);
     user.password = hashedPassword;
   }
+
+  if (!user.isNew) {
+    return;
+  }
+
   if (!user.avatar) {
     user.avatar = `https://robohash.org/${user.username}`;
   }

@@ -1,0 +1,108 @@
+import cors from 'cors';
+import express from 'express';
+import { createServer } from 'http';
+import { StatusCodes } from 'http-status-codes';
+import { Server } from 'socket.io';
+
+import bullServerAdapter from './config/bullBoardConfig.js';
+import passport from './config/passportConfig.js';
+import {
+  API_RATE_LIMIT_MAX,
+  API_RATE_LIMIT_WINDOW_MS,
+  CORS_ALLOWED_ORIGINS,
+  NODE_ENV,
+  REQUEST_SIZE_LIMIT
+} from './config/serverConfig.js';
+import ChannelSocketHandlers from './controllers/channelSocketController.js';
+import DirectMessageSocketHandlers from './controllers/directMessageSocketController.js';
+import HuddleSocketHandlers from './controllers/huddleSocketController.js';
+import MessageSocketHandlers from './controllers/messageSocketController.js';
+import PresenceSocketHandlers from './controllers/presenceSocketController.js';
+import { verifyEmailController } from './controllers/workspaceController.js';
+import { createRateLimiter } from './middlewares/rateLimitMiddleware.js';
+import { applySecurityHeaders } from './middlewares/securityHeadersMiddleware.js';
+import apiRouter from './routes/apiRoutes.js';
+
+const isLocalDevelopmentOrigin = (origin) => {
+  try {
+    const parsedOrigin = new URL(origin);
+    return ['localhost', '127.0.0.1'].includes(parsedOrigin.hostname);
+  } catch {
+    return false;
+  }
+};
+
+const isAllowedOrigin = (origin) => {
+  if (!origin || NODE_ENV !== 'production') {
+    return true;
+  }
+
+  if (CORS_ALLOWED_ORIGINS.includes(origin)) {
+    return true;
+  }
+
+  return isLocalDevelopmentOrigin(origin);
+};
+
+export const createCorsOptions = () => ({
+  origin(origin, callback) {
+    if (isAllowedOrigin(origin)) {
+      return callback(null, true);
+    }
+
+    console.warn(`Blocked CORS origin: ${origin}`);
+    return callback(new Error('Origin is not allowed by CORS'));
+  },
+  credentials: true
+});
+
+export const createApp = ({ includeBullBoard = true } = {}) => {
+  const app = express();
+  const corsOptions = createCorsOptions();
+
+  app.disable('x-powered-by');
+  app.use(applySecurityHeaders);
+  app.use(cors(corsOptions));
+  app.use(express.json({ limit: REQUEST_SIZE_LIMIT }));
+  app.use(express.urlencoded({ extended: true, limit: REQUEST_SIZE_LIMIT }));
+  app.use(passport.initialize());
+
+  if (includeBullBoard) {
+    app.use('/ui', bullServerAdapter.getRouter());
+  }
+
+  app.use(
+    '/api',
+    createRateLimiter({
+      windowMs: API_RATE_LIMIT_WINDOW_MS,
+      max: API_RATE_LIMIT_MAX,
+      message: 'API rate limit exceeded',
+      keyPrefix: 'api'
+    })
+  );
+  app.use('/api', apiRouter);
+
+  app.get('/verify/:token', verifyEmailController);
+  app.get('/ping', (req, res) => {
+    return res.status(StatusCodes.OK).json({ message: 'pong' });
+  });
+
+  return app;
+};
+
+export const createRealtimeServer = (app) => {
+  const server = createServer(app);
+  const io = new Server(server, {
+    cors: createCorsOptions()
+  });
+
+  io.on('connection', (socket) => {
+    MessageSocketHandlers(io, socket);
+    ChannelSocketHandlers(io, socket);
+    DirectMessageSocketHandlers(io, socket);
+    PresenceSocketHandlers(io, socket);
+    HuddleSocketHandlers(io, socket);
+  });
+
+  return { server, io };
+};

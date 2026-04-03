@@ -23,6 +23,11 @@ const userRepository = {
   getByToken: async function (token) {
     const user = await User.findOne({ verificationToken: token });
     return user;
+  },
+
+  getByPasswordResetToken: async function (passwordResetToken) {
+    const user = await User.findOne({ passwordResetToken });
+    return user;
   }
 };
 

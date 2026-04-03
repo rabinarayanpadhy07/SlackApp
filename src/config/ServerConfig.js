@@ -116,3 +116,16 @@ export const AUTH_RATE_LIMIT_MAX = parseNumber(
 );
 
 export const REQUEST_SIZE_LIMIT = process.env.REQUEST_SIZE_LIMIT || '1mb';
+
+export const PASSWORD_RESET_TOKEN_EXPIRY_MS = parseNumber(
+  process.env.PASSWORD_RESET_TOKEN_EXPIRY_MS,
+  60 * 60 * 1000
+);
+
+export const SENTRY_DSN = process.env.SENTRY_DSN || '';
+
+export const SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT || NODE_ENV;
+
+export const SENTRY_TRACES_SAMPLE_RATE = Number.parseFloat(
+  process.env.SENTRY_TRACES_SAMPLE_RATE || '0'
+);

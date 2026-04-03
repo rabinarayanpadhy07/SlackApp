@@ -1,6 +1,9 @@
 import { NODE_ENV } from '../../config/serverConfig.js';
+import { reportServerError } from './logger.js';
 
 export const internalErrorResponse = (error) => {
+  reportServerError(error);
+
   return {
     success: false,
     err: {

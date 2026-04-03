@@ -2,6 +2,8 @@ import { StatusCodes } from 'http-status-codes';
 
 import { FRONTEND_URL } from '../config/serverConfig.js';
 import {
+  requestPasswordResetService,
+  resetPasswordService,
   setup2FAService,
   signInService,
   signUpService,
@@ -42,6 +44,47 @@ export const signIn = async (req, res) => {
       .json(successResponse(response, 'User signed in successfully'));
   } catch (error) {
     console.log('User controller error', error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json(customErrorResponse(error));
+    }
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(internalErrorResponse(error));
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    await requestPasswordResetService(req.body);
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        successResponse(
+          { success: true },
+          'If an account exists for that email, a reset link has been sent'
+        )
+      );
+  } catch (error) {
+    console.log('Forgot password controller error', error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json(customErrorResponse(error));
+    }
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(internalErrorResponse(error));
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const response = await resetPasswordService(req.body);
+    return res
+      .status(StatusCodes.OK)
+      .json(successResponse(response, 'Password reset successfully'));
+  } catch (error) {
+    console.log('Reset password controller error', error);
     if (error.statusCode) {
       return res.status(error.statusCode).json(customErrorResponse(error));
     }

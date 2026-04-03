@@ -3,7 +3,9 @@ import passport from 'passport';
 
 import { FRONTEND_URL } from '../../config/serverConfig.js';
 import {
+  forgotPassword,
   googleAuthSuccess,
+  resetPassword,
   setup2FA,
   signIn,
   signUp,
@@ -12,6 +14,8 @@ import {
 import { isAuthenticated } from '../../middlewares/authMiddleware.js';
 import { createRateLimiter } from '../../middlewares/rateLimitMiddleware.js';
 import {
+  forgotPasswordSchema,
+  resetPasswordSchema,
   userSignInSchema,
   userSignUpSchema
 } from '../../validators/userSchema.js';
@@ -43,6 +47,18 @@ const resolveFrontendOrigin = (rawOrigin) => {
 
 router.post('/signup', authRateLimiter, validate(userSignUpSchema), signUp);
 router.post('/signin', authRateLimiter, validate(userSignInSchema), signIn);
+router.post(
+  '/forgot-password',
+  authRateLimiter,
+  validate(forgotPasswordSchema),
+  forgotPassword
+);
+router.post(
+  '/reset-password',
+  authRateLimiter,
+  validate(resetPasswordSchema),
+  resetPassword
+);
 router.post('/2fa/setup', isAuthenticated, setup2FA);
 router.post('/2fa/verify', authRateLimiter, verify2FA);
 

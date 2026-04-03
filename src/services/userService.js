@@ -1,19 +1,29 @@
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import { StatusCodes } from 'http-status-codes';
 import { createRequire } from 'module';
 import qrcode from 'qrcode';
 
-import { ENABLE_EMAIL_VERIFICATION } from '../config/serverConfig.js';
+import {
+  ENABLE_EMAIL_VERIFICATION,
+  PASSWORD_RESET_TOKEN_EXPIRY_MS
+} from '../config/serverConfig.js';
 import { addEmailtoMailQueue } from '../producers/mailQueueProducer.js';
 import userRepository from '../repositories/userRepository.js';
 import { createJWT } from '../utils/common/authUtils.js';
-import { verifyEmailMail } from '../utils/common/mailObject.js';
+import {
+  forgotPasswordMail,
+  verifyEmailMail
+} from '../utils/common/mailObject.js';
 import { applySuperAdminDefaults } from '../utils/common/superAdminUtils.js';
 import ClientError from '../utils/errors/clientError.js';
 import ValidationError from '../utils/errors/validationError.js';
 
 const require = createRequire(import.meta.url);
 const { authenticator } = require('otplib');
+
+const hashToken = (token) =>
+  crypto.createHash('sha256').update(token).digest('hex');
 
 export const signUpService = async (data) => {
   try {
@@ -210,6 +220,69 @@ export const verify2FAService = async (userId, token) => {
     };
   } catch (error) {
     console.log('Verify 2FA service error', error);
+    throw error;
+  }
+};
+
+export const requestPasswordResetService = async ({ email }) => {
+  try {
+    const user = await userRepository.getByEmail(email);
+
+    if (!user || !user.isActive) {
+      return {
+        success: true
+      };
+    }
+
+    const rawResetToken = crypto.randomBytes(32).toString('hex');
+    user.passwordResetToken = hashToken(rawResetToken);
+    user.passwordResetTokenExpiry = Date.now() + PASSWORD_RESET_TOKEN_EXPIRY_MS;
+    await user.save();
+
+    addEmailtoMailQueue({
+      ...forgotPasswordMail(rawResetToken),
+      to: user.email
+    });
+
+    return {
+      success: true
+    };
+  } catch (error) {
+    console.log('Forgot password service error', error);
+    throw error;
+  }
+};
+
+export const resetPasswordService = async ({ token, password }) => {
+  try {
+    const user = await userRepository.getByPasswordResetToken(hashToken(token));
+
+    if (!user || !user.passwordResetTokenExpiry) {
+      throw new ClientError({
+        explanation: 'Invalid data sent from the client',
+        message: 'Reset link is invalid or has already been used',
+        statusCode: StatusCodes.BAD_REQUEST
+      });
+    }
+
+    if (user.passwordResetTokenExpiry < Date.now()) {
+      throw new ClientError({
+        explanation: 'Invalid data sent from the client',
+        message: 'Reset link has expired',
+        statusCode: StatusCodes.BAD_REQUEST
+      });
+    }
+
+    user.password = password;
+    user.passwordResetToken = null;
+    user.passwordResetTokenExpiry = null;
+    await user.save();
+
+    return {
+      success: true
+    };
+  } catch (error) {
+    console.log('Reset password service error', error);
     throw error;
   }
 };
