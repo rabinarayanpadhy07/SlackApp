@@ -17,6 +17,12 @@ import {
   successResponse
 } from '../utils/common/responseObjects.js';
 
+const getAdminListParams = (req) => ({
+  page: req.query.page,
+  limit: req.query.limit,
+  search: req.query.search || ''
+});
+
 export const getAdminOverviewController = async (req, res) => {
   try {
     const data = await getAdminOverviewService();
@@ -36,7 +42,7 @@ export const getAdminOverviewController = async (req, res) => {
 
 export const listAdminUsersController = async (req, res) => {
   try {
-    const data = await listAdminUsersService();
+    const data = await listAdminUsersService(getAdminListParams(req));
     return res
       .status(StatusCodes.OK)
       .json(successResponse(data, 'Admin users fetched successfully'));
@@ -74,7 +80,7 @@ export const updateAdminUserController = async (req, res) => {
 
 export const listAdminWorkspacesController = async (req, res) => {
   try {
-    const data = await listAdminWorkspacesService();
+    const data = await listAdminWorkspacesService(getAdminListParams(req));
     return res
       .status(StatusCodes.OK)
       .json(successResponse(data, 'Admin workspaces fetched successfully'));
@@ -132,7 +138,7 @@ export const updateAdminWorkspaceController = async (req, res) => {
 
 export const listAdminPaymentsController = async (req, res) => {
   try {
-    const data = await listAdminPaymentsService();
+    const data = await listAdminPaymentsService(getAdminListParams(req));
     return res
       .status(StatusCodes.OK)
       .json(successResponse(data, 'Admin payments fetched successfully'));
@@ -149,7 +155,7 @@ export const listAdminPaymentsController = async (req, res) => {
 
 export const listAdminMessagesController = async (req, res) => {
   try {
-    const data = await listAdminMessagesService(req.query.search || '');
+    const data = await listAdminMessagesService(getAdminListParams(req));
     return res
       .status(StatusCodes.OK)
       .json(successResponse(data, 'Admin messages fetched successfully'));
@@ -183,7 +189,7 @@ export const deleteAdminMessageController = async (req, res) => {
 
 export const listAdminAuditLogsController = async (req, res) => {
   try {
-    const data = await listAdminAuditLogsService();
+    const data = await listAdminAuditLogsService(getAdminListParams(req));
     return res
       .status(StatusCodes.OK)
       .json(successResponse(data, 'Admin audit logs fetched successfully'));

@@ -3,9 +3,11 @@ import crudRepository from './crudRepository.js';
 
 const auditLogRepository = {
   ...crudRepository(AuditLog),
-  getRecentLogs: async (limit = 50) =>
+  countDocuments: async (filter = {}) => AuditLog.countDocuments(filter),
+  getRecentLogs: async (limit = 50, skip = 0) =>
     AuditLog.find()
       .sort({ createdAt: -1 })
+      .skip(skip)
       .limit(limit)
       .populate('actorId', 'username email avatar isSuperAdmin')
 };

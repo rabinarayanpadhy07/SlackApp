@@ -13,8 +13,9 @@ import Workspace from '../schema/workspace.js';
 import ClientError from '../utils/errors/clientError.js';
 import { recordAuditLog } from './auditLogService.js';
 
-const ADMIN_MESSAGE_LIMIT = 50;
-const ADMIN_MESSAGE_SCAN_LIMIT = 200;
+const DEFAULT_ADMIN_PAGE = 1;
+const DEFAULT_ADMIN_LIMIT = 10;
+const MAX_ADMIN_LIMIT = 25;
 
 const mapUserForAdmin = (user, workspaceCount = 0, ownedWorkspaceCount = 0) => ({
   _id: user._id,
@@ -50,11 +51,93 @@ const formatAuditLog = (log) => ({
     : null
 });
 
+const escapeRegex = (value = '') =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const normalizePagination = (page = 1, limit = DEFAULT_ADMIN_LIMIT) => {
+  const safePage = Math.max(
+    DEFAULT_ADMIN_PAGE,
+    Number.parseInt(page, 10) || DEFAULT_ADMIN_PAGE
+  );
+  const safeLimit = Math.min(
+    MAX_ADMIN_LIMIT,
+    Math.max(1, Number.parseInt(limit, 10) || DEFAULT_ADMIN_LIMIT)
+  );
+
+  return {
+    page: safePage,
+    limit: safeLimit,
+    skip: (safePage - 1) * safeLimit
+  };
+};
+
+const buildPaginatedResponse = (items, page, limit, total) => ({
+  items,
+  pagination: {
+    page,
+    limit,
+    total,
+    totalPages: Math.ceil(total / limit) || 1
+  }
+});
+
+const buildUserSearchFilter = (search = '') => {
+  const trimmed = search.trim();
+  if (!trimmed) {
+    return {};
+  }
+
+  const regex = new RegExp(escapeRegex(trimmed), 'i');
+  const orFilters = [
+    { username: regex },
+    { email: regex },
+    { plan: regex }
+  ];
+
+  if ('active'.includes(trimmed.toLowerCase())) {
+    orFilters.push({ isActive: true });
+  }
+
+  if (
+    'suspended'.includes(trimmed.toLowerCase()) ||
+    'blocked'.includes(trimmed.toLowerCase())
+  ) {
+    orFilters.push({ isActive: false });
+  }
+
+  if ('admin'.includes(trimmed.toLowerCase())) {
+    orFilters.push({ isSuperAdmin: true });
+  }
+
+  return {
+    $or: orFilters
+  };
+};
+
+const buildWorkspaceSearchFilter = (search = '') => {
+  const trimmed = search.trim();
+  if (!trimmed) {
+    return {};
+  }
+
+  const regex = new RegExp(escapeRegex(trimmed), 'i');
+  const orFilters = [{ name: regex }, { description: regex }];
+
+  if ('active'.includes(trimmed.toLowerCase())) {
+    orFilters.push({ isArchived: { $ne: true } });
+  }
+
+  if ('archived'.includes(trimmed.toLowerCase())) {
+    orFilters.push({ isArchived: true });
+  }
+
+  return {
+    $or: orFilters
+  };
+};
+
 const buildUserCounts = async () => {
-  const [users, workspaces] = await Promise.all([
-    User.find().sort({ createdAt: -1 }),
-    Workspace.find().select('ownerId members')
-  ]);
+  const workspaces = await Workspace.find().select('ownerId members');
 
   const membershipCountMap = new Map();
   const ownerCountMap = new Map();
@@ -77,7 +160,6 @@ const buildUserCounts = async () => {
   });
 
   return {
-    users,
     membershipCountMap,
     ownerCountMap
   };
@@ -175,16 +257,34 @@ export const getAdminOverviewService = async () => {
   };
 };
 
-export const listAdminUsersService = async () => {
-  const { users, membershipCountMap, ownerCountMap } = await buildUserCounts();
+export const listAdminUsersService = async ({
+  page = DEFAULT_ADMIN_PAGE,
+  limit = DEFAULT_ADMIN_LIMIT,
+  search = ''
+} = {}) => {
+  const { membershipCountMap, ownerCountMap } = await buildUserCounts();
+  const filter = buildUserSearchFilter(search);
+  const { page: safePage, limit: safeLimit, skip } = normalizePagination(
+    page,
+    limit
+  );
+  const [users, total] = await Promise.all([
+    User.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(safeLimit),
+    User.countDocuments(filter)
+  ]);
 
-  return users.map((user) =>
+  const items = users.map((user) =>
     mapUserForAdmin(
       user,
       membershipCountMap.get(user._id.toString()) || 0,
       ownerCountMap.get(user._id.toString()) || 0
     )
   );
+
+  return buildPaginatedResponse(items, safePage, safeLimit, total);
 };
 
 export const updateAdminUserService = async (
@@ -272,14 +372,28 @@ export const updateAdminUserService = async (
   );
 };
 
-export const listAdminWorkspacesService = async () => {
-  const workspaces = await Workspace.find()
-    .populate('ownerId', 'username email avatar')
-    .populate('channels', 'name type')
-    .populate('members.memberId', 'username email avatar')
-    .sort({ createdAt: -1 });
+export const listAdminWorkspacesService = async ({
+  page = DEFAULT_ADMIN_PAGE,
+  limit = DEFAULT_ADMIN_LIMIT,
+  search = ''
+} = {}) => {
+  const filter = buildWorkspaceSearchFilter(search);
+  const { page: safePage, limit: safeLimit, skip } = normalizePagination(
+    page,
+    limit
+  );
+  const [workspaces, total] = await Promise.all([
+    Workspace.find(filter)
+      .populate('ownerId', 'username email avatar')
+      .populate('channels', 'name type')
+      .populate('members.memberId', 'username email avatar')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(safeLimit),
+    Workspace.countDocuments(filter)
+  ]);
 
-  return workspaces.map((workspace) => ({
+  const items = workspaces.map((workspace) => ({
     _id: workspace._id,
     name: workspace.name,
     description: workspace.description,
@@ -310,6 +424,8 @@ export const listAdminWorkspacesService = async () => {
       type: channel.type
     }))
   }));
+
+  return buildPaginatedResponse(items, safePage, safeLimit, total);
 };
 
 export const updateAdminWorkspaceService = async (
@@ -388,12 +504,24 @@ export const deleteAdminWorkspaceService = async (workspaceId, actorUserId) => {
   };
 };
 
-export const listAdminPaymentsService = async () => {
-  const payments = await Payment.find()
-    .populate('userId', 'username email plan avatar')
-    .sort({ createdAt: -1 });
+export const listAdminPaymentsService = async ({
+  page = DEFAULT_ADMIN_PAGE,
+  limit = DEFAULT_ADMIN_LIMIT
+} = {}) => {
+  const { page: safePage, limit: safeLimit, skip } = normalizePagination(
+    page,
+    limit
+  );
+  const [payments, total] = await Promise.all([
+    Payment.find()
+      .populate('userId', 'username email plan avatar')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(safeLimit),
+    Payment.countDocuments()
+  ]);
 
-  return payments.map((payment) => ({
+  const items = payments.map((payment) => ({
     _id: payment._id,
     orderId: payment.orderId,
     paymentId: payment.paymentId,
@@ -411,52 +539,105 @@ export const listAdminPaymentsService = async () => {
         }
       : null
   }));
+
+  return buildPaginatedResponse(items, safePage, safeLimit, total);
 };
 
-export const listAdminMessagesService = async (query = '') => {
-  const messages = await Message.find()
-    .populate('senderId', 'username email avatar')
-    .populate('channelId', 'name workspaceId')
-    .sort({ createdAt: -1 })
-    .limit(ADMIN_MESSAGE_SCAN_LIMIT);
+export const listAdminMessagesService = async ({
+  page = DEFAULT_ADMIN_PAGE,
+  limit = DEFAULT_ADMIN_LIMIT,
+  search = ''
+} = {}) => {
+  const { page: safePage, limit: safeLimit, skip } = normalizePagination(
+    page,
+    limit
+  );
+  const trimmedSearch = search.trim();
+  const searchRegex = trimmedSearch
+    ? new RegExp(escapeRegex(trimmedSearch), 'i')
+    : null;
 
-  const needle = query.trim().toLowerCase();
-  const filteredMessages = needle
-    ? messages.filter((message) =>
-        [
-          message.body,
-          message.senderId?.username,
-          message.senderId?.email,
-          message.channelId?.name
+  const aggregationPipeline = [
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'senderId',
+        foreignField: '_id',
+        as: 'sender'
+      }
+    },
+    {
+      $unwind: {
+        path: '$sender',
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: 'channels',
+        localField: 'channelId',
+        foreignField: '_id',
+        as: 'channel'
+      }
+    },
+    {
+      $unwind: {
+        path: '$channel',
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    ...(searchRegex
+      ? [
+          {
+            $match: {
+              $or: [
+                { body: searchRegex },
+                { 'sender.username': searchRegex },
+                { 'sender.email': searchRegex },
+                { 'channel.name': searchRegex }
+              ]
+            }
+          }
         ]
-          .filter(Boolean)
-          .some((value) => value.toLowerCase().includes(needle))
-      )
-    : messages;
+      : []),
+    { $sort: { createdAt: -1 } },
+    {
+      $facet: {
+        items: [
+          { $skip: skip },
+          { $limit: safeLimit },
+          {
+            $project: {
+              _id: 1,
+              body: 1,
+              image: 1,
+              createdAt: 1,
+              deletedAt: 1,
+              isEdited: 1,
+              sender: {
+                _id: '$sender._id',
+                username: '$sender.username',
+                email: '$sender.email',
+                avatar: '$sender.avatar'
+              },
+              channel: {
+                _id: '$channel._id',
+                name: '$channel.name',
+                workspaceId: '$channel.workspaceId'
+              }
+            }
+          }
+        ],
+        total: [{ $count: 'count' }]
+      }
+    }
+  ];
 
-  return filteredMessages.slice(0, ADMIN_MESSAGE_LIMIT).map((message) => ({
-    _id: message._id,
-    body: message.body,
-    image: message.image,
-    createdAt: message.createdAt,
-    deletedAt: message.deletedAt,
-    isEdited: message.isEdited,
-    sender: message.senderId
-      ? {
-          _id: message.senderId._id,
-          username: message.senderId.username,
-          email: message.senderId.email,
-          avatar: message.senderId.avatar
-        }
-      : null,
-    channel: message.channelId
-      ? {
-          _id: message.channelId._id,
-          name: message.channelId.name,
-          workspaceId: message.channelId.workspaceId
-        }
-      : null
-  }));
+  const [result] = await Message.aggregate(aggregationPipeline);
+  const items = result?.items || [];
+  const total = result?.total?.[0]?.count || 0;
+
+  return buildPaginatedResponse(items, safePage, safeLimit, total);
 };
 
 export const deleteAdminMessageService = async (messageId, actorUserId) => {
@@ -492,7 +673,24 @@ export const deleteAdminMessageService = async (messageId, actorUserId) => {
   };
 };
 
-export const listAdminAuditLogsService = async () => {
-  const logs = await auditLogRepository.getRecentLogs(100);
-  return logs.map(formatAuditLog);
+export const listAdminAuditLogsService = async ({
+  page = DEFAULT_ADMIN_PAGE,
+  limit = DEFAULT_ADMIN_LIMIT
+} = {}) => {
+  const { page: safePage, limit: safeLimit, skip } = normalizePagination(
+    page,
+    limit
+  );
+  const [logs, total] = await Promise.all([
+    auditLogRepository
+      .getRecentLogs(safeLimit, skip),
+    auditLogRepository.countDocuments()
+  ]);
+
+  return buildPaginatedResponse(
+    logs.map(formatAuditLog),
+    safePage,
+    safeLimit,
+    total
+  );
 };
