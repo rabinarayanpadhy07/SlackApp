@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { StatusCodes } from 'http-status-codes';
-import { createRequire } from 'module';
+import { authenticator } from 'otplib';
 import qrcode from 'qrcode';
 
 import {
@@ -18,9 +18,6 @@ import {
 import { applySuperAdminDefaults } from '../utils/common/superAdminUtils.js';
 import ClientError from '../utils/errors/clientError.js';
 import ValidationError from '../utils/errors/validationError.js';
-
-const require = createRequire(import.meta.url);
-const { authenticator } = require('otplib');
 
 const hashToken = (token) =>
   crypto.createHash('sha256').update(token).digest('hex');
