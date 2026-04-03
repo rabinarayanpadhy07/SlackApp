@@ -20,7 +20,7 @@ export const signUpService = async (data) => {
     const newUser = await userRepository.signUpUser(data);
     applySuperAdminDefaults(newUser);
     await newUser.save();
-    if (ENABLE_EMAIL_VERIFICATION === 'true') {
+    if (ENABLE_EMAIL_VERIFICATION) {
       // send verification email
       addEmailtoMailQueue({
         ...verifyEmailMail(newUser.verificationToken),

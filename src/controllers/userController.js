@@ -13,6 +13,7 @@ import {
   internalErrorResponse,
   successResponse
 } from '../utils/common/responseObjects.js';
+import { sanitizeUser } from '../utils/common/sanitizeUser.js';
 
 export const signUp = async (req, res) => {
   try {
@@ -20,7 +21,7 @@ export const signUp = async (req, res) => {
 
     return res
       .status(StatusCodes.CREATED)
-      .json(successResponse(user, 'User created successfully'));
+      .json(successResponse(sanitizeUser(user), 'User created successfully'));
   } catch (error) {
     console.log('User controller error', error);
     if (error.statusCode) {

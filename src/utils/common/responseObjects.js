@@ -1,7 +1,14 @@
+import { NODE_ENV } from '../../config/serverConfig.js';
+
 export const internalErrorResponse = (error) => {
   return {
     success: false,
-    err: error,
+    err: {
+      message:
+        NODE_ENV === 'development'
+          ? error?.message || 'Unexpected internal server error'
+          : 'Unexpected internal server error'
+    },
     data: {},
     message: 'Internal server error'
   };

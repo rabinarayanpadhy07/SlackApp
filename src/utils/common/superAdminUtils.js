@@ -1,4 +1,4 @@
-import { SUPER_ADMIN_EMAILS } from '../../config/ServerConfig.js';
+import { SUPER_ADMIN_EMAILS } from '../../config/serverConfig.js';
 
 export const shouldGrantSuperAdmin = (email) =>
   SUPER_ADMIN_EMAILS.includes((email || '').trim().toLowerCase());

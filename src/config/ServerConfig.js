@@ -2,6 +2,23 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const parseBoolean = (value, fallback = false) => {
+  if (value === undefined || value === null || value === '') {
+    return fallback;
+  }
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  return ['true', '1', 'yes', 'on'].includes(String(value).toLowerCase());
+};
+
+const parseNumber = (value, fallback) => {
+  const parsedValue = Number(value);
+  return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : fallback;
+};
+
 export const PORT = process.env.PORT || 3000;
 
 export const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -24,8 +41,9 @@ export const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
 
 export const APP_LINK = process.env.APP_LINK || 'http://localhost:3000';
 
-export const ENABLE_EMAIL_VERIFICATION =
-  process.env.ENABLE_EMAIL_VERIFICATION || false;
+export const ENABLE_EMAIL_VERIFICATION = parseBoolean(
+  process.env.ENABLE_EMAIL_VERIFICATION
+);
 
 export const AWS_REGION = process.env.AWS_REGION;
 
@@ -51,6 +69,18 @@ export const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL;
 
 export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
+export const CORS_ALLOWED_ORIGINS = Array.from(
+  new Set(
+    [
+      FRONTEND_URL,
+      ...(process.env.CORS_ALLOWED_ORIGINS || '')
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean)
+    ].filter(Boolean)
+  )
+);
+
 export const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 export const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5-mini';
@@ -64,3 +94,25 @@ export const SUPER_ADMIN_EMAILS = (
   .split(',')
   .map((email) => email.trim().toLowerCase())
   .filter(Boolean);
+
+export const API_RATE_LIMIT_WINDOW_MS = parseNumber(
+  process.env.API_RATE_LIMIT_WINDOW_MS,
+  15 * 60 * 1000
+);
+
+export const API_RATE_LIMIT_MAX = parseNumber(
+  process.env.API_RATE_LIMIT_MAX,
+  300
+);
+
+export const AUTH_RATE_LIMIT_WINDOW_MS = parseNumber(
+  process.env.AUTH_RATE_LIMIT_WINDOW_MS,
+  15 * 60 * 1000
+);
+
+export const AUTH_RATE_LIMIT_MAX = parseNumber(
+  process.env.AUTH_RATE_LIMIT_MAX,
+  20
+);
+
+export const REQUEST_SIZE_LIMIT = process.env.REQUEST_SIZE_LIMIT || '1mb';

@@ -20,6 +20,7 @@ import {
   internalErrorResponse,
   successResponse
 } from '../utils/common/responseObjects.js';
+import { sanitizeUser } from '../utils/common/sanitizeUser.js';
 
 export const createWorkspaceController = async (req, res) => {
   try {
@@ -68,7 +69,7 @@ export const deleteWorkspaceController = async (req, res) => {
     );
     return res
       .status(StatusCodes.OK)
-      .json(successResponse(response, 'Workspace deleted successfully'));
+      .json(successResponse(response, 'Workspace fetched successfully'));
   } catch (error) {
     console.log(error);
     if (error.statusCode) {
@@ -281,7 +282,9 @@ export const verifyEmailController = async (req, res) => {
     const response = await verifyTokenService(req.params.token);
     return res
       .status(StatusCodes.OK)
-      .json(successResponse(response, 'Email verified successfully'));
+      .json(
+        successResponse(sanitizeUser(response), 'Email verified successfully')
+      );
   } catch (error) {
     console.log('verify email controller error', error);
     if (error.statusCode) {

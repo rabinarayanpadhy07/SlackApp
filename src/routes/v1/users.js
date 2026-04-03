@@ -10,6 +10,7 @@ import {
   verify2FA
 } from '../../controllers/userController.js';
 import { isAuthenticated } from '../../middlewares/authMiddleware.js';
+import { createRateLimiter } from '../../middlewares/rateLimitMiddleware.js';
 import {
   userSignInSchema,
   userSignUpSchema
@@ -17,6 +18,12 @@ import {
 import { validate } from '../../validators/zodValidator.js';
 
 const router = express.Router();
+const authRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: 'Too many authentication attempts',
+  keyPrefix: 'auth'
+});
 
 const resolveFrontendOrigin = (rawOrigin) => {
   if (!rawOrigin) {
@@ -34,19 +41,21 @@ const resolveFrontendOrigin = (rawOrigin) => {
   }
 };
 
-router.post('/signup', validate(userSignUpSchema), signUp);
-router.post('/signin', validate(userSignInSchema), signIn);
+router.post('/signup', authRateLimiter, validate(userSignUpSchema), signUp);
+router.post('/signin', authRateLimiter, validate(userSignInSchema), signIn);
 router.post('/2fa/setup', isAuthenticated, setup2FA);
-router.post('/2fa/verify', verify2FA);
+router.post('/2fa/verify', authRateLimiter, verify2FA);
 
 // Google Auth Routes
 router.get('/google', (req, res, next) => {
-  const frontendOrigin = resolveFrontendOrigin(req.query.origin);
-  passport.authenticate('google', {
-    scope: ['profile', 'email'],
-    session: false,
-    state: frontendOrigin
-  })(req, res, next);
+  authRateLimiter(req, res, () => {
+    const frontendOrigin = resolveFrontendOrigin(req.query.origin);
+    passport.authenticate('google', {
+      scope: ['profile', 'email'],
+      session: false,
+      state: frontendOrigin
+    })(req, res, next);
+  });
 });
 
 router.get(

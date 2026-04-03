@@ -2,7 +2,7 @@ import {
   OPENAI_API_KEY,
   OPENAI_BASE_URL,
   OPENAI_MODEL
-} from '../config/ServerConfig.js';
+} from '../config/serverConfig.js';
 
 const OPENAI_TIMEOUT_MS = 30000;
 const MAX_TRANSCRIPT_SEGMENTS_FOR_LLM = 24;

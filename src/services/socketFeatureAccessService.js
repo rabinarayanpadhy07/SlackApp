@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-import { JWT_SECRET } from '../config/ServerConfig.js';
+import { JWT_SECRET } from '../config/serverConfig.js';
 import userRepository from '../repositories/userRepository.js';
 
 export const getSocketUserFromToken = async (token) => {
