@@ -13,7 +13,7 @@ const workspaceRepository = {
       _id: workspaceId,
       isArchived: { $ne: true }
     })
-      .populate('members.memberId', 'username email avatar')
+      .populate('members.memberId', 'username email profilePicture')
       .populate('channels');
 
     if (workspace) {
@@ -144,7 +144,7 @@ const workspaceRepository = {
     const workspaces = await Workspace.find({
       'members.memberId': memberId,
       isArchived: { $ne: true }
-    }).populate('members.memberId', 'username email avatar');
+    }).populate('members.memberId', 'username email profilePicture');
 
     return workspaces;
   },

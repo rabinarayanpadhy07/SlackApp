@@ -137,7 +137,7 @@ export const signInService = async (data) => {
 
     return {
       username: user.username,
-      avatar: user.avatar,
+      profilePicture: user.profilePicture || '',
       email: user.email,
       _id: user._id,
       plan: user.plan,
@@ -214,7 +214,7 @@ export const verify2FAService = async (userId, token) => {
     return {
       success: true,
       username: user.username,
-      avatar: user.avatar,
+      profilePicture: user.profilePicture || '',
       email: user.email,
       _id: user._id,
       plan: user.plan,
@@ -286,6 +286,39 @@ export const resetPasswordService = async ({ token, password }) => {
     };
   } catch (error) {
     console.log('Reset password service error', error);
+    throw error;
+  }
+};
+
+export const updateProfileService = async (userId, { profilePicture }) => {
+  try {
+    const user = await userRepository.getById(userId);
+    if (!user) {
+      throw new ClientError({
+        explanation: 'User not found',
+        message: 'No registered user found',
+        statusCode: StatusCodes.NOT_FOUND
+      });
+    }
+
+    user.profilePicture = profilePicture || '';
+    const wasSuperAdmin = user.isSuperAdmin;
+    applySuperAdminDefaults(user);
+    if (user.isSuperAdmin !== wasSuperAdmin) {
+      user.markModified('isSuperAdmin');
+    }
+    await user.save();
+
+    return {
+      username: user.username,
+      profilePicture: user.profilePicture || '',
+      email: user.email,
+      _id: user._id,
+      plan: user.plan,
+      isSuperAdmin: user.isSuperAdmin
+    };
+  } catch (error) {
+    console.log('Update profile service error', error);
     throw error;
   }
 };

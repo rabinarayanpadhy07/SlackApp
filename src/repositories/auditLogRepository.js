@@ -9,7 +9,7 @@ const auditLogRepository = {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('actorId', 'username email avatar isSuperAdmin')
+      .populate('actorId', 'username email profilePicture isSuperAdmin')
 };
 
 export default auditLogRepository;

@@ -9,6 +9,7 @@ import {
   setup2FA,
   signIn,
   signUp,
+  updateProfile,
   verify2FA
 } from '../../controllers/userController.js';
 import { isAuthenticated } from '../../middlewares/authMiddleware.js';
@@ -16,6 +17,7 @@ import { createRateLimiter } from '../../middlewares/rateLimitMiddleware.js';
 import {
   forgotPasswordSchema,
   resetPasswordSchema,
+  updateProfileSchema,
   userSignInSchema,
   userSignUpSchema
 } from '../../validators/userSchema.js';
@@ -61,6 +63,12 @@ router.post(
 );
 router.post('/2fa/setup', isAuthenticated, setup2FA);
 router.post('/2fa/verify', authRateLimiter, verify2FA);
+router.put(
+  '/profile',
+  isAuthenticated,
+  validate(updateProfileSchema),
+  updateProfile
+);
 
 // Google Auth Routes
 router.get('/google', (req, res, next) => {

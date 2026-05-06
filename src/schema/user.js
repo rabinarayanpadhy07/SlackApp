@@ -35,8 +35,9 @@ const userSchema = new mongoose.Schema(
         'Username must contain only letters and numbers'
       ]
     },
-    avatar: {
-      type: String
+    profilePicture: {
+      type: String,
+      default: ''
     },
     isVerified: {
       type: Boolean,
@@ -97,9 +98,7 @@ userSchema.pre('save', async function saveUser() {
     return;
   }
 
-  if (!user.avatar) {
-    user.avatar = `https://robohash.org/${user.username}`;
-  }
+  user.profilePicture = user.profilePicture || '';
   user.verificationToken = uuidv4().substring(0, 10).toUpperCase();
   user.verificationTokenExpiry = Date.now() + 3600000; // 1 hour
 });

@@ -8,15 +8,15 @@ const directMessageRepository = {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate('senderId', 'username email avatar')
-      .populate('recipientId', 'username email avatar');
+      .populate('senderId', 'username email profilePicture')
+      .populate('recipientId', 'username email profilePicture');
 
     return messages;
   },
   getMessageDetails: async (messageId) => {
     const message = await DirectMessage.findById(messageId)
-      .populate('senderId', 'username email avatar')
-      .populate('recipientId', 'username email avatar');
+      .populate('senderId', 'username email profilePicture')
+      .populate('recipientId', 'username email profilePicture');
 
     return message;
   }

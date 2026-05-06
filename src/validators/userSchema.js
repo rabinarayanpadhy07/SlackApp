@@ -31,3 +31,7 @@ export const resetPasswordSchema = z.object({
     .regex(/[A-Za-z]/, 'Password must include at least one letter')
     .regex(/\d/, 'Password must include at least one number')
 });
+
+export const updateProfileSchema = z.object({
+  profilePicture: z.string().trim().url().or(z.literal('')).optional()
+});

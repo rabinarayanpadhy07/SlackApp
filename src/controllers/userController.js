@@ -7,6 +7,7 @@ import {
   setup2FAService,
   signInService,
   signUpService,
+  updateProfileService,
   verify2FAService
 } from '../services/userService.js';
 import { createJWT } from '../utils/common/authUtils.js';
@@ -122,7 +123,7 @@ export const googleAuthSuccess = (req, res) => {
     const token = createJWT({ id: req.user._id, email: req.user.email });
     const user = {
       username: req.user.username,
-      avatar: req.user.avatar,
+      profilePicture: req.user.profilePicture || '',
       email: req.user.email,
       _id: req.user._id,
       plan: req.user.plan,
@@ -138,6 +139,24 @@ export const googleAuthSuccess = (req, res) => {
   } catch (error) {
     console.log('Google auth controller error', error);
     return res.redirect(`${FRONTEND_URL}/auth/signin?error=internal_error`);
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const response = await updateProfileService(req.user._id, req.body);
+    return res
+      .status(StatusCodes.OK)
+      .json(successResponse(response, 'Profile updated successfully'));
+  } catch (error) {
+    console.log('Update profile controller error', error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json(customErrorResponse(error));
+    }
+
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(internalErrorResponse(error));
   }
 };
 

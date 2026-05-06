@@ -21,7 +21,7 @@ const mapUserForAdmin = (user, workspaceCount = 0, ownedWorkspaceCount = 0) => (
   _id: user._id,
   username: user.username,
   email: user.email,
-  avatar: user.avatar,
+  profilePicture: user.profilePicture || '',
   plan: user.plan,
   isVerified: user.isVerified,
   isSuperAdmin: user.isSuperAdmin,
@@ -45,7 +45,7 @@ const formatAuditLog = (log) => ({
         _id: log.actorId._id,
         username: log.actorId.username,
         email: log.actorId.email,
-        avatar: log.actorId.avatar,
+        profilePicture: log.actorId.profilePicture || '',
         isSuperAdmin: log.actorId.isSuperAdmin
       }
     : null
@@ -197,12 +197,12 @@ export const getAdminOverviewService = async () => {
       .sort({ createdAt: -1 })
       .limit(5)
       .select(
-        'username email plan isSuperAdmin createdAt avatar isActive suspendedAt'
+        'username email plan isSuperAdmin createdAt profilePicture isActive suspendedAt'
       ),
     Payment.find()
       .sort({ createdAt: -1 })
       .limit(8)
-      .populate('userId', 'username email avatar plan'),
+      .populate('userId', 'username email profilePicture plan'),
     auditLogRepository.getRecentLogs(10)
   ]);
 
@@ -229,7 +229,7 @@ export const getAdminOverviewService = async () => {
       _id: user._id,
       username: user.username,
       email: user.email,
-      avatar: user.avatar,
+      profilePicture: user.profilePicture || '',
       plan: user.plan,
       isSuperAdmin: user.isSuperAdmin,
       isActive: user.isActive,
@@ -248,7 +248,7 @@ export const getAdminOverviewService = async () => {
             _id: payment.userId._id,
             username: payment.userId.username,
             email: payment.userId.email,
-            avatar: payment.userId.avatar,
+            profilePicture: payment.userId.profilePicture || '',
             plan: payment.userId.plan
           }
         : null
@@ -384,9 +384,9 @@ export const listAdminWorkspacesService = async ({
   );
   const [workspaces, total] = await Promise.all([
     Workspace.find(filter)
-      .populate('ownerId', 'username email avatar')
+      .populate('ownerId', 'username email profilePicture')
       .populate('channels', 'name type')
-      .populate('members.memberId', 'username email avatar')
+      .populate('members.memberId', 'username email profilePicture')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(safeLimit),
@@ -406,7 +406,7 @@ export const listAdminWorkspacesService = async ({
           _id: workspace.ownerId._id,
           username: workspace.ownerId.username,
           email: workspace.ownerId.email,
-          avatar: workspace.ownerId.avatar
+          profilePicture: workspace.ownerId.profilePicture || ''
         }
       : null,
     memberCount: workspace.members.length,
@@ -415,7 +415,7 @@ export const listAdminWorkspacesService = async ({
       _id: member.memberId?._id,
       username: member.memberId?.username,
       email: member.memberId?.email,
-      avatar: member.memberId?.avatar,
+      profilePicture: member.memberId?.profilePicture || '',
       role: member.role
     })),
     channels: workspace.channels.map((channel) => ({
@@ -514,7 +514,7 @@ export const listAdminPaymentsService = async ({
   );
   const [payments, total] = await Promise.all([
     Payment.find()
-      .populate('userId', 'username email plan avatar')
+      .populate('userId', 'username email plan profilePicture')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(safeLimit),
@@ -535,7 +535,7 @@ export const listAdminPaymentsService = async ({
           username: payment.userId.username,
           email: payment.userId.email,
           plan: payment.userId.plan,
-          avatar: payment.userId.avatar
+          profilePicture: payment.userId.profilePicture || ''
         }
       : null
   }));
@@ -618,7 +618,7 @@ export const listAdminMessagesService = async ({
                 _id: '$sender._id',
                 username: '$sender.username',
                 email: '$sender.email',
-                avatar: '$sender.avatar'
+                profilePicture: '$sender.profilePicture'
               },
               channel: {
                 _id: '$channel._id',

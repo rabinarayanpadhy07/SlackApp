@@ -35,7 +35,7 @@ export const updatePaymentStatusService = async (orderId, status, paymentId, sig
     return {
         _id: updatedUser._id,
         username: updatedUser.username,
-        avatar: updatedUser.avatar,
+        profilePicture: updatedUser.profilePicture || '',
         email: updatedUser.email,
         plan: updatedUser.plan
     };
