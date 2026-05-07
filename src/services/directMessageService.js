@@ -6,7 +6,12 @@ import workspaceRepository from '../repositories/workspaceRepository.js';
 import ClientError from '../utils/errors/clientError.js';
 import { isUserMemberOfWorkspace } from './workspaceService.js';
 
+const getId = (value) => (value?._id || value)?.toString();
+
 const ensureWorkspaceAndMembers = async (workspaceId, currentUserId, memberId) => {
+  const currentUserObjectId = getId(currentUserId);
+  const memberObjectId = getId(memberId);
+
   const workspace = await workspaceRepository.getWorkspaceDetailsById(
     workspaceId
   );
@@ -19,7 +24,7 @@ const ensureWorkspaceAndMembers = async (workspaceId, currentUserId, memberId) =
     });
   }
 
-  const isCurrentUserMember = isUserMemberOfWorkspace(workspace, currentUserId);
+  const isCurrentUserMember = isUserMemberOfWorkspace(workspace, currentUserObjectId);
 
   if (!isCurrentUserMember) {
     throw new ClientError({
@@ -29,7 +34,7 @@ const ensureWorkspaceAndMembers = async (workspaceId, currentUserId, memberId) =
     });
   }
 
-  const isOtherUserMember = isUserMemberOfWorkspace(workspace, memberId);
+  const isOtherUserMember = isUserMemberOfWorkspace(workspace, memberObjectId);
 
   if (!isOtherUserMember) {
     throw new ClientError({
@@ -47,13 +52,16 @@ export const getDirectMessagesService = async ({
   page,
   limit
 }) => {
-  await ensureWorkspaceAndMembers(workspaceId, currentUserId, memberId);
+  const currentUserObjectId = getId(currentUserId);
+  const memberObjectId = getId(memberId);
+
+  await ensureWorkspaceAndMembers(workspaceId, currentUserObjectId, memberObjectId);
 
   const filter = {
     workspaceId,
     $or: [
-      { senderId: currentUserId, recipientId: memberId },
-      { senderId: memberId, recipientId: currentUserId }
+      { senderId: currentUserObjectId, recipientId: memberObjectId },
+      { senderId: memberObjectId, recipientId: currentUserObjectId }
     ]
   };
 
@@ -73,9 +81,12 @@ export const createDirectMessageService = async ({
   body,
   image
 }) => {
-  await ensureWorkspaceAndMembers(workspaceId, currentUserId, memberId);
+  const currentUserObjectId = getId(currentUserId);
+  const memberObjectId = getId(memberId);
 
-  const isValidRecipient = await userRepository.getById(memberId);
+  await ensureWorkspaceAndMembers(workspaceId, currentUserObjectId, memberObjectId);
+
+  const isValidRecipient = await userRepository.getById(memberObjectId);
 
   if (!isValidRecipient) {
     throw new ClientError({
@@ -89,8 +100,8 @@ export const createDirectMessageService = async ({
     body,
     image,
     workspaceId,
-    senderId: currentUserId,
-    recipientId: memberId
+    senderId: currentUserObjectId,
+    recipientId: memberObjectId
   });
 
   const messageDetails = await directMessageRepository.getMessageDetails(

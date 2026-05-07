@@ -12,13 +12,12 @@ import {
 
 export const getDirectMessagesController = async (req, res) => {
   try {
-    console.log('--- getDirectMessagesController hit! ---', req.params, req.user);
     const { workspaceId, memberId } = req.params;
 
     const messages = await getDirectMessagesService({
       workspaceId,
       memberId,
-      currentUserId: req.user,
+      currentUserId: req.user._id,
       page: Number(req.query.page) || 1,
       limit: Number(req.query.limit) || 20
     });
@@ -46,7 +45,7 @@ export const createDirectMessageController = async (req, res) => {
     const message = await createDirectMessageService({
       workspaceId,
       memberId,
-      currentUserId: req.user,
+      currentUserId: req.user._id,
       body,
       image
     });

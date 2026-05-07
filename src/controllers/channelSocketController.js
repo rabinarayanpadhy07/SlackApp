@@ -1,7 +1,7 @@
 import {
   JOIN_CHANNEL,
-  LEAVE_CHANNEL,
-  NEW_DIRECT_MESSAGE_EVENT
+  JOIN_DIRECT_MESSAGE,
+  LEAVE_CHANNEL
 } from '../utils/common/eventConstants.js';
 
 export default function messageHandlers(io, socket) {
@@ -17,7 +17,7 @@ export default function messageHandlers(io, socket) {
   });
 
   socket.on(
-    NEW_DIRECT_MESSAGE_EVENT,
+    JOIN_DIRECT_MESSAGE,
     async function joinDirectMessageRoomHandler(data, cb) {
       const { workspaceId, memberId, currentUserId } = data;
       const roomId = `${workspaceId}:${currentUserId}:${memberId}`;
